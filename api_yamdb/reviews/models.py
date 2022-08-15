@@ -1,6 +1,40 @@
+from datetime import datetime
+
 from django.db import models
 from django.core.validators import MaxValueValidator
-from datetime import datetime
+from django.contrib.auth import get_user_model
+
+from .validators import validate_review_score
+from core.models import PubDateModel
+
+User = get_user_model()
+
+MINIMAL_SCORE = 1
+MAXIMUM_SCORE = 10
+
+
+class Review(PubDateModel):
+    text = models.TextField()
+    score = models.IntegerField(validators=[validate_review_score])
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+
+
+class Comment(PubDateModel):
+    text = models.TextField()
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    review = models.ForeignKey(
+        Review,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
 
 
 class Category(models.Model):
