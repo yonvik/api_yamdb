@@ -15,9 +15,6 @@ class Category(models.Model):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
-    def __str__(self):
-        return self.name
-
 
 class Genre(models.Model):
     name = models.CharField('Название жанра', max_length=256)
