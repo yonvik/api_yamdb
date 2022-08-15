@@ -9,9 +9,6 @@ from core.models import PubDateModel
 
 User = get_user_model()
 
-MINIMAL_SCORE = 1
-MAXIMUM_SCORE = 10
-
 
 class Review(PubDateModel):
     text = models.TextField()
@@ -21,6 +18,15 @@ class Review(PubDateModel):
         on_delete=models.CASCADE,
         related_name='reviews'
     )
+    title = models.ForeignKey(
+        'Title',
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+
+    class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
 
 
 class Comment(PubDateModel):
@@ -35,6 +41,10 @@ class Comment(PubDateModel):
         on_delete=models.CASCADE,
         related_name='comments'
     )
+
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Коментарии'
 
 
 class Category(models.Model):
