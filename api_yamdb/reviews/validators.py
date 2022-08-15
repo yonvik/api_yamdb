@@ -1,11 +1,12 @@
 from django.core.exceptions import ValidationError
 
-from .models import MINIMAL_SCORE, MAXIMUM_SCORE
+MINIMAL_SCORE = 1
+MAXIMUM_SCORE = 10
 
 
 def validate_review_score(value: int):
-    if MINIMAL_SCORE > value > MAXIMUM_SCORE:
+    if MINIMAL_SCORE > value or value > MAXIMUM_SCORE:
         raise ValidationError(
-            (f'Оценка не может быть меньше {MINIMAL_SCORE} или '
-             f'больше {MAXIMUM_SCORE}: {value}')
+            (f'Оценка должна быть больше {MINIMAL_SCORE} и '
+             f'меньше {MAXIMUM_SCORE}: {value}')
         )
