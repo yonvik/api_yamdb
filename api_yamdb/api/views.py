@@ -51,6 +51,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class CategoryViewSet(CustomViewSet):
+    """Endpoint модели Category."""
     queryset = review_models.Category.objects.all()
     serializer_class = serializers.CategorySerializer
     # permission_classes = ()
@@ -60,6 +61,7 @@ class CategoryViewSet(CustomViewSet):
 
 
 class GenreViewSet(CustomViewSet):
+    """Endpoint модели Genre."""
     queryset = review_models.Genre.objects.all()
     serializer_class = serializers.GenreSerializer
     # permission_classes = ()
@@ -70,6 +72,7 @@ class GenreViewSet(CustomViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+    """Endpoint модели Title."""
     queryset = review_models.Title.objects.all()
     # permission_classes = ()
     pagination_class = LimitOffsetPagination
