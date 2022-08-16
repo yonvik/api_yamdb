@@ -1,3 +1,4 @@
+from email import message
 import jwt
 
 from datetime import datetime, timedelta
@@ -9,6 +10,11 @@ from django.contrib.auth.models import (
 
 from django.db import models
 
+from random import randint
+
+from django.core.mail import send_mail
+from api_yamdb.settings import RECIPIENTS_EMAIL
+
 
 class UserManager(BaseUserManager):
     """
@@ -17,18 +23,23 @@ class UserManager(BaseUserManager):
     же самого кода, который Django использовал для создания User (для демонстрации).
     """
 
-    def create_user(self, username, email, password=None):
-        """ Создает и возвращает пользователя с имэйлом, паролем и именем. """
+    def create_user(self, username, email):
+        """ Создает и возвращает пользователя с имэйлом и именем. """
         if username is None:
             raise TypeError('Users must have a username.')
 
         if email is None:
             raise TypeError('Users must have an email address.')
 
-        user = self.model(username=username, email=self.normalize_email(email))
-        user.set_password(password)
+        random = randint(100000, 1000000)
+        user = self.model(username=username, email=email, secret_key=random)
         user.save()
-
+        send_mail(
+            'Регистрация нового пользователя',
+            'Это ваш token для получения JWTТокена:' f'{random}',
+            'from@example.com',
+            [RECIPIENTS_EMAIL],
+        )
         return user
 
     def create_superuser(self, username, email, password):
@@ -55,7 +66,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Поскольку адрес почты нам нужен в любом случае, мы также будем
     # использовать его для входы в систему, так как это наиболее
     # распространенная форма учетных данных на данный момент (ну еще телефон).
-    email = models.EmailField(db_index=True, unique=True)
+    email = models.EmailField(db_index=True, unique=True, null=True)
+
+    #Случайно сгенерированный ключ для подтверждения по почте JWTToken
+    secret_key = models.FloatField(db_index=True, unique=True, null=True)
 
     # Когда пользователь более не желает пользоваться нашей системой, он может
     # захотеть удалить свой аккаунт. Для нас это проблема, так как собираемые
@@ -80,8 +94,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     # Свойство USERNAME_FIELD сообщает нам, какое поле мы будем использовать
     # для входа в систему. В данном случае мы хотим использовать почту.
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['token']
 
     # Сообщает Django, что определенный выше класс UserManager
     # должен управлять объектами этого типа.

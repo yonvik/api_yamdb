@@ -122,6 +122,6 @@ DJOSER = {
 
 AUTH_USER_MODEL = "users.User"
 
-RECIPIENTS_EMAIL = ['drakyla.96@yandex.ru']   # замените на свою почту
-DEFAULT_FROM_EMAIL = 'admin@mysite.com'  # замените на свою почту
+
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+RECIPIENTS_EMAIL = 'drakyla.96@mail.ru'
