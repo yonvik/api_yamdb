@@ -17,3 +17,19 @@ class ReviewSerializer(serializers.ModelSerializer):
             'score',
             'pub_date'
         )
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='username'
+    )
+
+    class Meta:
+        model = review_models.Comment
+        fields = (
+            'id',
+            'text',
+            'author',
+            'pub_date'
+        )
