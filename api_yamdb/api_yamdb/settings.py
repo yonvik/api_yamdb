@@ -1,4 +1,5 @@
 import os
+from tkinter.tix import Tree
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,7 +22,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'users',
     'rest_framework',
+    'djoser',
     'api',
     'reviews',
 ]
@@ -104,3 +107,21 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static/'),)
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+}
+
+DJOSER = {
+    'ACTIVATION_URL': '#/activate/{uid}/{token}',
+    'SEND_ACTIVATION_EMAIL': True,
+}
+
+AUTH_USER_MODEL = "users.User"
+
+RECIPIENTS_EMAIL = ['drakyla.96@yandex.ru']   # замените на свою почту
+DEFAULT_FROM_EMAIL = 'admin@mysite.com'  # замените на свою почту
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
