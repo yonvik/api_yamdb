@@ -16,13 +16,13 @@ class Command(BaseCommand):
     data_path = None
 
     _MODELS_OR_LINKS = {
-        'category.csv': {
-            'model': models.Category,
-            'type': 'model',
+        'users.csv': {
+            'model': models.User,
+            'type': 'custom_model',
             'data': []
         },
-        'comments.csv': {
-            'model': models.Comment,
+        'category.csv': {
+            'model': models.Category,
             'type': 'model',
             'data': []
         },
@@ -41,9 +41,9 @@ class Command(BaseCommand):
             'type': 'model',
             'data': []
         },
-        'users.csv': {
-            'model': models.User,
-            'type': 'custom_model',
+        'comments.csv': {
+            'model': models.Comment,
+            'type': 'model',
             'data': []
         },
         'genre_title.csv': {
