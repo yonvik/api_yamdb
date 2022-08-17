@@ -23,7 +23,7 @@ class UserManager(BaseUserManager):
     же самого кода, который Django использовал для создания User (для демонстрации).
     """
 
-    def create_user(self, username, email, password):
+    def create_user(self, username, email):
         """ Создает и возвращает пользователя с имэйлом и именем. """
         if username is None:
             raise TypeError('Users must have a username.')
@@ -69,7 +69,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(db_index=True, unique=True, null=True)
 
     #Случайно сгенерированный ключ для подтверждения по почте JWTToken
-    secret_key = models.FloatField(db_index=True, unique=True, null=True)
+    secret_key = models.IntegerField(db_index=True, unique=True, null=True)
 
     # Когда пользователь более не желает пользоваться нашей системой, он может
     # захотеть удалить свой аккаунт. Для нас это проблема, так как собираемые
