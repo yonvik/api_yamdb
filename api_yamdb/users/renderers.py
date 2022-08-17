@@ -17,6 +17,4 @@ class UserJSONRenderer(JSONRenderer):
             data['token'] = token.decode('utf-8')
 
         # Наконец, мы можем отобразить наши данные в простанстве имен 'user'.
-        return json.dumps({
-            'user': data
-        })
+        return json.dumps(data)
