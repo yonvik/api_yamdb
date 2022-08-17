@@ -1,9 +1,6 @@
 from email import message
 from rest_framework import serializers
 from django.contrib.auth import authenticate, get_user_model
-from django.core.mail import send_mail
-from api_yamdb.settings import RECIPIENTS_EMAIL
-from random import randint
 
 User = get_user_model()
 
