@@ -2,9 +2,11 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 
-from .serializers import RegistrationSerializer, LoginSerializer
+from .serializers import RegistrationSerializer, LoginSerializer, User
 from .renderers import UserJSONRenderer
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class RegistrationAPIView(APIView):
@@ -23,6 +25,17 @@ class RegistrationAPIView(APIView):
         serializer.save()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class MyTokenObtainPairView(APIView):
+
+    def post(self, request):
+        user = User.objects.get(username=request.data.get('username'))
+        validate_key = user.secret_key
+        if int(request.data.get('secret_key')) != validate_key: # Здесь проверка наличия кода из почты.
+            raise ValueError()
+        token = user.token
+        return Response(token)
 
 
 class LoginAPIView(APIView):

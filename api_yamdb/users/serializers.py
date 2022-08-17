@@ -34,7 +34,6 @@ class LoginSerializer(serializers.Serializer):
         # это означает подтверждение того, что присутствуют адрес электронной
         # почты и то, что эта комбинация соответствует одному из пользователей.
         email = data.get('email', None)
-        password = data.get('password', None)
 
         # Вызвать исключение, если не предоставлена почта.
         if email is None:
@@ -42,17 +41,11 @@ class LoginSerializer(serializers.Serializer):
                 'An email address is required to log in.'
             )
 
-        # Вызвать исключение, если не предоставлен пароль.
-        if password is None:
-            raise serializers.ValidationError(
-                'A password is required to log in.'
-            )
-
         # Метод authenticate предоставляется Django и выполняет проверку, что
         # предоставленные почта и пароль соответствуют какому-то пользователю в
         # нашей базе данных. Мы передаем email как username, так как в модели
         # пользователя USERNAME_FIELD = email.
-        user = authenticate(username=email, password=password)
+        user = authenticate(username=email)
 
         # Если пользователь с данными почтой/паролем не найден, то authenticate
         # вернет None. Возбудить исключение в таком случае.
