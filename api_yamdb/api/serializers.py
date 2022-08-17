@@ -53,13 +53,12 @@ class GenreSerializer(serializers.ModelSerializer):
 class TitleSerializer(serializers.ModelSerializer):
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
-    rating = serializers.IntegerField()
 
     class Meta:
         model = review_models.Title
         fields = (
             'id', 'name', 'category', 'genre',
-            'year', 'description', 'rating',
+            'year', 'description',
         )
         validators = [
             UniqueTogetherValidator(

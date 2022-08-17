@@ -5,7 +5,7 @@ from . import views
 
 router_v1 = routers.SimpleRouter()
 router_v1.register(
-    r'titles/',
+    r'titles',
     views.TitleViewSet,
     basename='titles'
 )
