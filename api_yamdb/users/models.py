@@ -23,7 +23,7 @@ class UserManager(BaseUserManager):
     же самого кода, который Django использовал для создания User (для демонстрации).
     """
 
-    def create_user(self, username, email):
+    def create_user(self, username, email, password):
         """ Создает и возвращает пользователя с имэйлом и именем. """
         if username is None:
             raise TypeError('Users must have a username.')
@@ -95,7 +95,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Свойство USERNAME_FIELD сообщает нам, какое поле мы будем использовать
     # для входа в систему. В данном случае мы хотим использовать почту.
     USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['token']
+    REQUIRED_FIELDS = ['email']
 
     # Сообщает Django, что определенный выше класс UserManager
     # должен управлять объектами этого типа.

@@ -12,14 +12,12 @@ class RegistrationSerializer(serializers.ModelSerializer):
     """ Сериализация регистрации пользователя и создания нового. """
     # Клиентская сторона не должна иметь возможность отправлять токен вместе с
     # запросом на регистрацию. Сделаем его доступным только на чтение.
-    token = serializers.CharField(max_length=255, read_only=True)
-    secret_key = serializers.CharField(read_only=True)
 
     class Meta:
         model = User
         # Перечислить все поля, которые могут быть включены в запрос
         # или ответ, включая поля, явно указанные выше.
-        fields = ['email', 'username', 'secret_key', 'token']
+        fields = ['email', 'username']
 
     def create(self, validated_data):
         # Использовать метод create_user, который мы
