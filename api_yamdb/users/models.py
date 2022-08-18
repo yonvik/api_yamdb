@@ -67,17 +67,17 @@ class User(AbstractBaseUser, PermissionsMixin):
     # который мы можем использовать для предоставления User в пользовательском
     # интерфейсе. Мы так же проиндексируем этот столбец в базе данных для
     # повышения скорости поиска в дальнейшем.
-    username = models.CharField(db_index=True, max_length=255, unique=True)
+    username = models.CharField(db_index=True, max_length=150, unique=True)
 
     # Так же мы нуждаемся в поле, с помощью которого будем иметь возможность
     # связаться с пользователем и идентифицировать его при входе в систему.
     # Поскольку адрес почты нам нужен в любом случае, мы также будем
     # использовать его для входы в систему, так как это наиболее
     # распространенная форма учетных данных на данный момент (ну еще телефон).
-    email = models.EmailField(db_index=True, unique=True)
+    email = models.EmailField(db_index=True, unique=True, null=True)
 
-    first_name = models.CharField(max_length=256, blank=True, null=True)
-    last_name = models.CharField(max_length=256, blank=True, null=True)
+    first_name = models.CharField(max_length=150, blank=True, null=True)
+    last_name = models.CharField(max_length=150, blank=True, null=True)
 
     # Случайно сгенерированный ключ для подтверждения по почте JWTToken
     secret_key = models.CharField(max_length=256,

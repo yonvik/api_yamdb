@@ -1,13 +1,16 @@
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import filters, status, viewsets
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
+from rest_framework import viewsets
+from rest_framework import mixins
 
-from .serializers import RegistrationSerializer, LoginSerializer, UserSerializer, UserInfoSerializer
+
+from .serializers import RegistrationSerializer, LoginSerializer, UserSerializer, UserInfoSerializer, UserMeSerializer
 from .renderers import UserJSONRenderer
 from .models import User
 from .permissions import AdminOnly
@@ -63,3 +66,15 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = (IsAdminUser,)
+
+
+class UserMeApiView(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserMeSerializer
+    permission_classes = (IsAuthenticated,)

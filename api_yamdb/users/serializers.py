@@ -62,7 +62,6 @@ class LoginSerializer(serializers.Serializer):
             'not valid confirmation_code: ', confirmation_code)
 
 
-
 def username_not_me(username):
     if username == 'me':
         raise serializers.ValidationError('использовать имя "me" запрещено!')
@@ -90,3 +89,13 @@ class UserInfoSerializer(UserSerializer):
         fields = (
             'username', 'first_name', 'last_name', 'email', 'bio', 'role'
         )
+
+
+class UserMeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = (
+            'username', 'first_name', 'last_name', 'email', 'bio', 'role'
+        )
+
