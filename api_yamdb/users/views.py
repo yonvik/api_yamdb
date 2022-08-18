@@ -1,4 +1,3 @@
-from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,7 +9,7 @@ from rest_framework.decorators import action
 from .serializers import RegistrationSerializer, LoginSerializer, UserSerializer, UserInfoSerializer
 from .renderers import UserJSONRenderer
 from .models import User
-from .permissions import AdminOnly
+from api.permissions import OnlyAdmin
 
 
 class RegistrationAPIView(APIView):
@@ -44,7 +43,7 @@ class JWTView(APIView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (AdminOnly,)
+    permission_classes = (OnlyAdmin,)
     lookup_field = 'username'
     lookup_value_regex = r'[\w\@\.\+\-]+'
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
