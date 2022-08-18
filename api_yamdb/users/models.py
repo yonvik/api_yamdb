@@ -1,5 +1,3 @@
-import jwt
-
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -12,6 +10,8 @@ from django.db import models
 from random import randint
 
 from django.core.mail import send_mail
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from api_yamdb.settings import RECIPIENTS_EMAIL
 
 ROLE_CHOICES = (
@@ -130,7 +130,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         user._generate_jwt_token(). Декоратор @property выше делает это
         возможным. token называется "динамическим свойством".
         """
-        return self._generate_jwt_token()
+        return self.get_tokens_for_user()
 
     def get_full_name(self):
         """
@@ -144,16 +144,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         """ Аналогично методу get_full_name(). """
         return self.username
 
-    def _generate_jwt_token(self):
-        """
-        Генерирует веб-токен JSON, в котором хранится идентификатор этого
-        пользователя, срок действия токена составляет 10 дней от создания
-        """
-        dt = datetime.now() + timedelta(days=10)
-
-        token = jwt.encode({
-            'id': self.pk,
-            'exp': dt.utcfromtimestamp(dt.timestamp())
-        }, settings.SECRET_KEY, algorithm='HS256')
-
-        return token
+    def get_tokens_for_user(self):
+        refresh = RefreshToken.for_user(self)
+        return str(refresh.access_token)
