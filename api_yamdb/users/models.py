@@ -40,6 +40,7 @@ class UserManager(BaseUserManager):
             raise TypeError('Users must have an email address.')
 
         random = randint(100000, 1000000)
+        kwargs['secret_key'] = random
         user = self.model(**kwargs)
         user.save()
         send_mail(
