@@ -2,6 +2,7 @@ import os
 import re
 import csv
 import codecs
+import sys
 from typing import List
 
 from django.core.management.base import BaseCommand
@@ -9,6 +10,9 @@ from django.conf import settings
 from django.db import IntegrityError
 
 from reviews import models
+from core.exceptions.import_csv import (UnexpectedFile, DoesNotExistFunction,
+                                        DataAlreadyExist, NotSetStaticfilesDir,
+                                        NotFoundPath)
 
 
 class Command(BaseCommand):
@@ -18,7 +22,7 @@ class Command(BaseCommand):
     _MODELS_OR_LINKS = {
         'users.csv': {
             'model': models.User,
-            'type': 'custom_model',
+            'type': 'model',
             'data': []
         },
         'category.csv': {
@@ -55,11 +59,12 @@ class Command(BaseCommand):
     }
 
     _INDEX_STATICFILES_DIRS = 0
+    _SYS_EXIT_CODE = 1
 
     def parse_file(self, path: str, file_name: str) -> None:
         """Формирует из файла массив для записи."""
         if self._MODELS_OR_LINKS.get(file_name) is None:
-            raise ValueError()
+            raise UnexpectedFile('Непредвиденный файл: ', file_name)
         with codecs.open(f'{path}/{file_name}', 'r', 'utf_8_sig') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
@@ -80,16 +85,6 @@ class Command(BaseCommand):
             [model_['model'](**self._prepare_row(row)) for row in
              model_['data']],
             ignore_conflicts=True)
-
-    def model_user(self, model_: dict) -> None:
-        """Запись данных в БД для модели юзер."""
-        User = model_['model']
-        for row in model_['data']:
-            User.objects.update_or_create(
-                pk=row['id'],
-                username=row['username'],
-                email=row['email'],
-            )
 
     def model_genre_title(self, model_: dict) -> None:
         """Создание связей многие ко многим для моделей Genre и Title."""
@@ -114,15 +109,17 @@ class Command(BaseCommand):
                 func = getattr(self, func_name)
                 func(model_)
             except AttributeError:
-                pass
+                raise DoesNotExistFunction(func_name, 'не определена.')
             except IntegrityError:
-                print(model_['model'], 'данные уже существуют')
+                raise DataAlreadyExist(model_['model'],
+                                       'данные уже существуют в бд')
 
     def get_data_path(self) -> str:
         """Формирует путь к каталогу с csv файлами."""
         if self.data_path is None:
             if len(settings.STATICFILES_DIRS) < 1:
-                raise ValueError()
+                raise NotSetStaticfilesDir(
+                    'Не задан путь для статических файлов.')
             path = settings.STATICFILES_DIRS[self._INDEX_STATICFILES_DIRS]
             return path + 'data/'
         return self.data_path
@@ -130,7 +127,7 @@ class Command(BaseCommand):
     def validate_dir(self, path: str) -> None:
         """Проверка наличия каталога."""
         if not os.path.isdir(path):
-            raise ValueError()
+            raise NotFoundPath('Не найден каталог: ', path)
 
     def get_csv_files(self, path: str) -> List[str]:
         """Формирование списка csv файлов."""
@@ -143,9 +140,22 @@ class Command(BaseCommand):
         return csv_files
 
     def handle(self, *args, **options):
-        path = self.get_data_path()
-        self.validate_dir(path)
-        files = self.get_csv_files(path)
-        for file in files:
-            self.parse_file(path, file)
-        self.write_db()
+        try:
+            path = self.get_data_path()
+            self.validate_dir(path)
+            files = self.get_csv_files(path)
+            for file in files:
+                self.parse_file(path, file)
+            self.write_db()
+        except UnexpectedFile as error:
+            print(error)
+        except DoesNotExistFunction as error:
+            print(error)
+        except DataAlreadyExist as error:
+            print(error)
+        except NotSetStaticfilesDir as error:
+            print(error)
+            sys.exit(self._SYS_EXIT_CODE)
+        except NotFoundPath as error:
+            print(error)
+            sys.exit(self._SYS_EXIT_CODE)
