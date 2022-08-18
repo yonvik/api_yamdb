@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
+from django.db.models.aggregates import Avg
 
 from reviews import models as review_models
 
@@ -53,12 +54,15 @@ class GenreSerializer(serializers.ModelSerializer):
 class TitleSerializer(serializers.ModelSerializer):
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
+    rating = serializers.SerializerMethodField(read_only=True)
 
+    def get_rating(self, obj):
+        return obj.reviews.all().aggregate(Avg('score')).get('score__avg', 0.0)
     class Meta:
         model = review_models.Title
         fields = (
             'id', 'name', 'category', 'genre',
-            'year', 'description',
+            'year', 'description', 'rating'
         )
         validators = [
             UniqueTogetherValidator(
@@ -75,6 +79,10 @@ class TitleCreateSerializer(serializers.ModelSerializer):
                                          many=True)
     category = serializers.SlugRelatedField(slug_field='slug',
                                             queryset=review_models.Category.objects.all())
+    rating = serializers.SerializerMethodField()
+
+    def get_rating(self, obj):
+        return obj.reviews.all().aggregate(Avg('score')).get('score__avg', 0.0)
 
     class Meta:
         model = review_models.Title
