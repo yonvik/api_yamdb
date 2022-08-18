@@ -16,7 +16,14 @@ class RegistrationSerializer(serializers.ModelSerializer):
         model = User
         # Перечислить все поля, которые могут быть включены в запрос
         # или ответ, включая поля, явно указанные выше.
-        fields = ['email', 'username']
+        fields = [
+            'email',
+            'username',
+            'role',
+            'bio',
+            'first_name',
+            'last_name'
+        ]
 
     def create(self, validated_data):
         # Использовать метод create_user, который мы

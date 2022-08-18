@@ -76,6 +76,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     # распространенная форма учетных данных на данный момент (ну еще телефон).
     email = models.EmailField(db_index=True, unique=True)
 
+    first_name = models.CharField(max_length=256, blank=True, null=True)
+    last_name = models.CharField(max_length=256, blank=True, null=True)
+
     # Случайно сгенерированный ключ для подтверждения по почте JWTToken
     secret_key = models.CharField(max_length=256,
                                   db_index=True, unique=True, null=True)
