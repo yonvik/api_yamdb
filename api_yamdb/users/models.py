@@ -1,6 +1,3 @@
-from datetime import datetime, timedelta
-
-from django.conf import settings
 from django.contrib.auth.models import (
     AbstractBaseUser, BaseUserManager, PermissionsMixin
 )
@@ -46,8 +43,8 @@ class UserManager(BaseUserManager):
         send_mail(
             'Регистрация нового пользователя',
             'Это ваш token для получения JWTТокена:' f'{random}',
-            'from@example.com',
-            [RECIPIENTS_EMAIL],
+            RECIPIENTS_EMAIL,
+            [user.email],
         )
         return user
 
@@ -77,7 +74,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Поскольку адрес почты нам нужен в любом случае, мы также будем
     # использовать его для входы в систему, так как это наиболее
     # распространенная форма учетных данных на данный момент (ну еще телефон).
-    email = models.EmailField(db_index=True, unique=True, null=True)
+    email = models.EmailField(db_index=True, unique=True)
 
     # Случайно сгенерированный ключ для подтверждения по почте JWTToken
     secret_key = models.IntegerField(db_index=True, unique=True, null=True)

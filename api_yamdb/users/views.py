@@ -1,12 +1,11 @@
 from rest_framework import status
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
 
 from .serializers import RegistrationSerializer, LoginSerializer, User
 from .renderers import UserJSONRenderer
-from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class RegistrationAPIView(APIView):
@@ -21,19 +20,22 @@ class RegistrationAPIView(APIView):
         # Паттерн создания сериализатора, валидации и сохранения - довольно
         # стандартный, и его можно часто увидеть в реальных проектах.
         serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MyTokenObtainPairView(APIView):
 
     def post(self, request):
-        user = User.objects.get(username=request.data.get('username'))
-        validate_key = user.secret_key
-        if int(request.data.get('secret_key')) != validate_key: # Здесь проверка наличия кода из почты.
-            raise ValueError()
+        username = request.data.get('username')
+        confirmation_code = request.data.get('confirmation_code')
+        if not username:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        user = get_object_or_404(User, username=username)
+        if int(confirmation_code) != user.secret_key:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         token = user.token
         return Response(token)
 
