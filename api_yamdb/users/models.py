@@ -1,11 +1,10 @@
-from email import message
 import jwt
 
 from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib.auth.models import (
-	AbstractBaseUser, BaseUserManager, PermissionsMixin
+    AbstractBaseUser, BaseUserManager, PermissionsMixin
 )
 
 from django.db import models
@@ -15,6 +14,15 @@ from random import randint
 from django.core.mail import send_mail
 from api_yamdb.settings import RECIPIENTS_EMAIL
 
+ROLE_CHOICES = (
+    ('user', 'Пользователь'),
+    ('moderator', 'Модератор '),
+    ('admin', 'Администратор')
+)
+
+DEFAULT_USER_ROLE = ROLE_CHOICES[0][0]
+SUPERUSER_ROLE = ROLE_CHOICES[2][0]
+
 
 class UserManager(BaseUserManager):
     """
@@ -23,16 +31,16 @@ class UserManager(BaseUserManager):
     же самого кода, который Django использовал для создания User (для демонстрации).
     """
 
-    def create_user(self, username, email):
+    def create_user(self, **kwargs):
         """ Создает и возвращает пользователя с имэйлом и именем. """
-        if username is None:
+        if kwargs.get('username') is None:
             raise TypeError('Users must have a username.')
 
-        if email is None:
+        if kwargs.get('email') is None:
             raise TypeError('Users must have an email address.')
 
         random = randint(100000, 1000000)
-        user = self.model(username=username, email=email, secret_key=random)
+        user = self.model(**kwargs)
         user.save()
         send_mail(
             'Регистрация нового пользователя',
@@ -42,17 +50,19 @@ class UserManager(BaseUserManager):
         )
         return user
 
-    def create_superuser(self, username, email, password):
+    def create_superuser(self, **kwargs):
         """ Создает и возввращет пользователя с привилегиями суперадмина. """
-        if password is None:
+        if kwargs.get('password') is None:
             raise TypeError('Superusers must have a password.')
 
-        user = self.create_user(username, email, password)
+        user = self.create_user(**kwargs)
         user.is_superuser = True
         user.is_staff = True
+        user.role = SUPERUSER_ROLE
         user.save()
 
         return user
+
 
 class User(AbstractBaseUser, PermissionsMixin):
     # Каждому пользователю нужен понятный человеку уникальный идентификатор,
@@ -68,7 +78,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     # распространенная форма учетных данных на данный момент (ну еще телефон).
     email = models.EmailField(db_index=True, unique=True, null=True)
 
-    #Случайно сгенерированный ключ для подтверждения по почте JWTToken
+    # Случайно сгенерированный ключ для подтверждения по почте JWTToken
     secret_key = models.IntegerField(db_index=True, unique=True, null=True)
 
     # Когда пользователь более не желает пользоваться нашей системой, он может
@@ -91,6 +101,13 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     # Дополнительный поля, необходимые Django
     # при указании кастомной модели пользователя.
+
+    bio = models.TextField(blank=True, null=True)
+    role = models.CharField(
+        max_length=20,
+        default=DEFAULT_USER_ROLE,
+        choices=ROLE_CHOICES
+    )
 
     # Свойство USERNAME_FIELD сообщает нам, какое поле мы будем использовать
     # для входа в систему. В данном случае мы хотим использовать почту.
@@ -139,4 +156,3 @@ class User(AbstractBaseUser, PermissionsMixin):
         }, settings.SECRET_KEY, algorithm='HS256')
 
         return token
-
