@@ -60,3 +60,33 @@ class LoginSerializer(serializers.Serializer):
             return data
         raise serializers.ValidationError(
             'not valid confirmation_code: ', confirmation_code)
+
+
+
+def username_not_me(username):
+    if username == 'me':
+        raise serializers.ValidationError('использовать имя "me" запрещено!')
+    return username
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """User serializer"""
+
+    class Meta:
+        model = User
+        fields = (
+            'username', 'first_name', 'last_name', 'email', 'bio', 'role'
+        )
+
+    def validate_username(self, username):
+        return username_not_me(username)
+
+
+class UserInfoSerializer(UserSerializer):
+    role = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'username', 'first_name', 'last_name', 'email', 'bio', 'role'
+        )
