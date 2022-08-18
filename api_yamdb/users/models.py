@@ -77,7 +77,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(db_index=True, unique=True)
 
     # Случайно сгенерированный ключ для подтверждения по почте JWTToken
-    secret_key = models.IntegerField(db_index=True, unique=True, null=True)
+    secret_key = models.CharField(max_length=256,
+                                  db_index=True, unique=True, null=True)
 
     # Когда пользователь более не желает пользоваться нашей системой, он может
     # захотеть удалить свой аккаунт. Для нас это проблема, так как собираемые

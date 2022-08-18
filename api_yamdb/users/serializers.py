@@ -1,6 +1,7 @@
-from email import message
-from rest_framework import serializers
-from django.contrib.auth import authenticate, get_user_model
+from rest_framework import serializers, status
+from django.contrib.auth import get_user_model
+
+from . import exceptions
 
 User = get_user_model()
 
@@ -31,48 +32,24 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.CharField(max_length=255)
-    username = serializers.CharField(max_length=255, read_only=True)
+    username = serializers.CharField(max_length=255, required=True)
     token = serializers.CharField(max_length=255, read_only=True)
+    confirmation_code = serializers.CharField(max_length=256, required=True)
+
+    def validate_username(self, value):
+        if not User.objects.filter(username=value).exists():
+            raise exceptions.CustomValidation(
+                'user does not exist',
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        return value
 
     def validate(self, data):
-        # В методе validate мы убеждаемся, что текущий экземпляр
-        # LoginSerializer значение valid. В случае входа пользователя в систему
-        # это означает подтверждение того, что присутствуют адрес электронной
-        # почты и то, что эта комбинация соответствует одному из пользователей.
-        email = data.get('email', None)
-
-        # Вызвать исключение, если не предоставлена почта.
-        if email is None:
-            raise serializers.ValidationError(
-                'An email address is required to log in.'
-            )
-
-        # Метод authenticate предоставляется Django и выполняет проверку, что
-        # предоставленные почта и пароль соответствуют какому-то пользователю в
-        # нашей базе данных. Мы передаем email как username, так как в модели
-        # пользователя USERNAME_FIELD = email.
-        user = authenticate(username=email)
-
-        # Если пользователь с данными почтой/паролем не найден, то authenticate
-        # вернет None. Возбудить исключение в таком случае.
-        if user is None:
-            raise serializers.ValidationError(
-                'A user with this email and password was not found.'
-            )
-
-        # Django предоставляет флаг is_active для модели User. Его цель
-        # сообщить, был ли пользователь деактивирован или заблокирован.
-        # Проверить стоит, вызвать исключение в случае True.
-        if not user.is_active:
-            raise serializers.ValidationError(
-                'This user has been deactivated.'
-            )
-
-        # Метод validate должен возвращать словать проверенных данных. Это
-        # данные, которые передются в т.ч. в методы create и update.
-        return {
-            'email': user.email,
-            'username': user.username,
-            'token': user.token
-        }
+        username = data.get('username')
+        confirmation_code = data.get('confirmation_code')
+        user = User.objects.get(username=username)
+        if user.secret_key == confirmation_code:
+            data.update({'token': user.token})
+            return data
+        raise serializers.ValidationError(
+            'not valid confirmation_code: ', confirmation_code)
