@@ -6,10 +6,11 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 
-from .serializers import RegistrationSerializer, LoginSerializer, UserSerializer, UserInfoSerializer
+from . import serializers
 from .renderers import UserJSONRenderer
 from .models import User
 from api.permissions import OnlyAdmin
+from api.paginators import StandardResultsSetPagination
 
 
 class RegistrationAPIView(APIView):
@@ -17,7 +18,7 @@ class RegistrationAPIView(APIView):
     Разрешить всем пользователям (аутентифицированным и нет) доступ к данному эндпоинту.
     """
     permission_classes = (AllowAny,)
-    serializer_class = RegistrationSerializer
+    serializer_class = serializers.RegistrationSerializer
     renderer_classes = (UserJSONRenderer,)
 
     def post(self, request):
@@ -31,7 +32,7 @@ class RegistrationAPIView(APIView):
 
 
 class JWTView(APIView):
-    serializer_class = LoginSerializer
+    serializer_class = serializers.LoginSerializer
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -42,19 +43,20 @@ class JWTView(APIView):
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = serializers.RegistrationSerializer
     permission_classes = (OnlyAdmin,)
     lookup_field = 'username'
     lookup_value_regex = r'[\w\@\.\+\-]+'
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('username',)
+    pagination_class = StandardResultsSetPagination
 
     @action(
         methods=('get', 'patch'),
         detail=False,
         url_path='me',
         permission_classes=(IsAuthenticated,),
-        serializer_class=UserInfoSerializer
+        serializer_class=serializers.UserInfoSerializer
     )
     def user_info(self, request):
         user = get_object_or_404(User, pk=request.user.id)
