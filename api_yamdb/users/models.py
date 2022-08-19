@@ -148,3 +148,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_tokens_for_user(self):
         refresh = RefreshToken.for_user(self)
         return str(refresh.access_token)
+
+    class Meta:
+        ordering = ['pk']
