@@ -22,8 +22,6 @@ class RegistrationAPIView(APIView):
     renderer_classes = (UserJSONRenderer,)
 
     def post(self, request):
-        # Паттерн создания сериализатора, валидации и сохранения - довольно
-        # стандартный, и его можно часто увидеть в реальных проектах.
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
@@ -46,7 +44,6 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.UserSerializer
     permission_classes = (OnlyAdmin,)
     lookup_field = 'username'
-    lookup_value_regex = r'[\w\@\.\+\-]+'
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ('username',)
     pagination_class = StandardResultsSetPagination
