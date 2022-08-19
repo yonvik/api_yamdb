@@ -1,14 +1,24 @@
-from rest_framework import serializers
+from django.db import IntegrityError
+from rest_framework import serializers, status
+from rest_framework.exceptions import APIException
 from rest_framework.validators import UniqueTogetherValidator
 from django.db.models.aggregates import Avg
 
 from reviews import models as review_models
 
 
+class UniqueConstraintValidation(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+
+
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True,
-        slug_field='username')
+        slug_field='username',
+        default=serializers.CurrentUserDefault())
+    title = serializers.HiddenField(
+        default=None
+    )
 
     class Meta:
         model = review_models.Review
@@ -16,9 +26,16 @@ class ReviewSerializer(serializers.ModelSerializer):
             'id',
             'text',
             'author',
+            'title',
             'score',
             'pub_date'
         )
+
+    def create(self, validated_data):
+        try:
+            return super().create(validated_data)
+        except IntegrityError:
+            raise UniqueConstraintValidation()
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -38,14 +55,12 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = review_models.Category
         exclude = ('id',)
 
 
 class GenreSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = review_models.Genre
         exclude = ('id',)
@@ -58,6 +73,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
     def get_rating(self, obj):
         return obj.reviews.all().aggregate(Avg('score')).get('score__avg', 0.0)
+
     class Meta:
         model = review_models.Title
         fields = (
