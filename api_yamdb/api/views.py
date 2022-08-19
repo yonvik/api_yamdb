@@ -5,7 +5,8 @@ from rest_framework.pagination import LimitOffsetPagination
 from reviews import models as review_models
 
 from . import serializers
-from .permissions import AllowEditOrReadOnly, OnlyAdmin
+from . import permissions
+from . import paginators
 
 
 class CustomViewSet(mixins.ListModelMixin,
@@ -18,7 +19,8 @@ class CustomViewSet(mixins.ListModelMixin,
 class ReviewViewSet(viewsets.ModelViewSet):
     """Endpoint модели Review."""
     serializer_class = serializers.ReviewSerializer
-    permission_classes = (AllowEditOrReadOnly,)
+    permission_classes = (permissions.AllowEditOrReadOnly,)
+    pagination_class = paginators.StandardResultsSetPagination
 
     def get_queryset(self):
         title = get_object_or_404(
@@ -37,7 +39,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     """Endpoint модели Comment."""
     serializer_class = serializers.CommentSerializer
-    permission_classes = (AllowEditOrReadOnly,)
+    permission_classes = (permissions.AllowEditOrReadOnly,)
+    pagination_class = paginators.StandardResultsSetPagination
 
     def get_queryset(self):
         review = get_object_or_404(review_models.Review,
@@ -57,17 +60,17 @@ class CategoryViewSet(CustomViewSet):
     """Endpoint модели Category."""
     queryset = review_models.Category.objects.all()
     serializer_class = serializers.CategorySerializer
-    permission_classes = (OnlyAdmin,)
+    permission_classes = (permissions.OnlyAdmin,)
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('=name', )
+    search_fields = ('=name',)
 
 
 class GenreViewSet(CustomViewSet):
     """Endpoint модели Genre."""
     queryset = review_models.Genre.objects.all()
     serializer_class = serializers.GenreSerializer
-    permission_classes = (OnlyAdmin,)
+    permission_classes = (permissions.OnlyAdmin,)
     lookup_field = 'slug'
     pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
@@ -77,7 +80,7 @@ class GenreViewSet(CustomViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     """Endpoint модели Title."""
     queryset = review_models.Title.objects.all()
-    permission_classes = (OnlyAdmin,)
+    permission_classes = (permissions.OnlyAdmin,)
     pagination_class = LimitOffsetPagination
 
     def get_serializer_class(self):

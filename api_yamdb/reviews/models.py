@@ -25,8 +25,15 @@ class Review(PubDateModel):
     )
 
     class Meta:
+        ordering = ['pk']
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'title'],
+                name='unique_author_title'
+            )
+        ]
 
 
 class Comment(PubDateModel):
@@ -43,6 +50,7 @@ class Comment(PubDateModel):
     )
 
     class Meta:
+        ordering = ['pk']
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Коментарии'
 
