@@ -16,9 +16,9 @@ class AllowEditOrReadOnly(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return (
-            request.method in permissions.SAFE_METHODS
-            or request.user == obj.author
-            or request.user.role in self.ALLOW_EDIT_ROLE
+                request.method in permissions.SAFE_METHODS
+                or request.user == obj.author
+                or request.user.role in self.ALLOW_EDIT_ROLE
         )
 
 
@@ -29,3 +29,10 @@ class OnlyAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.user.is_authenticated:
             return request.user.role == self.ALLOW_ROLE
+
+
+class OnlyAdminOrRead(OnlyAdmin):
+    def has_permission(self, request, view):
+        return (request.method in permissions.SAFE_METHODS
+                or request.user.is_authenticated
+                and request.user.role == self.ALLOW_ROLE)
