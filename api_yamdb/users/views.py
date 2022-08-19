@@ -14,9 +14,6 @@ from api.paginators import StandardResultsSetPagination
 
 
 class RegistrationAPIView(APIView):
-    """
-    Разрешить всем пользователям (аутентифицированным и нет) доступ к данному эндпоинту.
-    """
     permission_classes = (AllowAny,)
     serializer_class = serializers.RegistrationSerializer
     renderer_classes = (UserJSONRenderer,)

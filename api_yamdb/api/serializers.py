@@ -90,11 +90,13 @@ class TitleSerializer(serializers.ModelSerializer):
 
 
 class TitleCreateSerializer(serializers.ModelSerializer):
-    genre = serializers.SlugRelatedField(slug_field='slug',
-                                         queryset=review_models.Genre.objects.all(),
-                                         many=True)
-    category = serializers.SlugRelatedField(slug_field='slug',
-                                            queryset=review_models.Category.objects.all())
+    genre = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=review_models.Genre.objects.all(),
+        many=True)
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=review_models.Category.objects.all())
     rating = serializers.SerializerMethodField()
 
     def get_rating(self, obj):
