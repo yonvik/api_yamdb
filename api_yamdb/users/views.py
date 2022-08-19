@@ -43,7 +43,7 @@ class JWTView(APIView):
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = serializers.RegistrationSerializer
+    serializer_class = serializers.UserSerializer
     permission_classes = (OnlyAdmin,)
     lookup_field = 'username'
     lookup_value_regex = r'[\w\@\.\+\-]+'

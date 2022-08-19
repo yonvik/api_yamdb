@@ -8,27 +8,19 @@ User = get_user_model()
 
 class RegistrationSerializer(serializers.ModelSerializer):
     """ Сериализация регистрации пользователя и создания нового. """
-    # Клиентская сторона не должна иметь возможность отправлять токен вместе с
-    # запросом на регистрацию. Сделаем его доступным только на чтение.
     NOT_ALLOWED_USERNAMES = ['me']
 
     class Meta:
         model = User
-        # Перечислить все поля, которые могут быть включены в запрос
-        # или ответ, включая поля, явно указанные выше.
         fields = [
-            'email',
             'username',
-            'role',
-            'bio',
+            'email',
             'first_name',
-            'last_name'
-        ]
+            'last_name',
+            'bio',
+            'role',
 
-    def create(self, validated_data):
-        # Использовать метод create_user, который мы
-        # написали ранее, для создания нового пользователя.
-        return User.objects.create_user(**validated_data)
+        ]
 
     def validate_username(self, value):
         if value in self.NOT_ALLOWED_USERNAMES:
@@ -60,6 +52,25 @@ class LoginSerializer(serializers.Serializer):
             return data
         raise serializers.ValidationError(
             'not valid confirmation_code: ', confirmation_code)
+
+
+def username_not_me(username):
+    if username == 'me':
+        raise serializers.ValidationError('использовать имя "me" запрещено!')
+    return username
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """User serializer"""
+
+    class Meta:
+        model = User
+        fields = (
+            'username', 'first_name', 'last_name', 'email', 'bio', 'role'
+        )
+
+    def validate_username(self, username):
+        return username_not_me(username)
 
 
 class UserInfoSerializer(RegistrationSerializer):
