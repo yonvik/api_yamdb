@@ -13,5 +13,6 @@ class DataAlreadyExist(Exception):
 class NotSetStaticfilesDir(Exception):
     pass
 
+
 class NotFoundPath(Exception):
     pass
