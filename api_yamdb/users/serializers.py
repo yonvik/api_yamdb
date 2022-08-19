@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from rest_framework import serializers, status
 from django.contrib.auth import get_user_model
 
@@ -9,6 +11,7 @@ User = get_user_model()
 class RegistrationSerializer(serializers.ModelSerializer):
     """ Сериализация регистрации пользователя и создания нового. """
     NOT_ALLOWED_USERNAMES = ['me']
+    role = serializers.HiddenField(default='user')
 
     class Meta:
         model = User
@@ -28,6 +31,15 @@ class RegistrationSerializer(serializers.ModelSerializer):
                 'Поле username не может содержать значение: ', value
             )
         return value
+
+    def to_representation(self, instance):
+        """Удаляются поля из ответа со значением None."""
+        result = super().to_representation(instance)
+        return OrderedDict(
+            [(key, result[key]) for key in result if result[key] is not None])
+
+    def create(self, validated_data):
+        return User.objects.create_user(**validated_data)
 
 
 class LoginSerializer(serializers.Serializer):
