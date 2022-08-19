@@ -23,9 +23,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'users',
-    'django_filters',
+    'rest_framework',
     'rest_framework_simplejwt',
+    'django_filters',
+    'users',
     'api',
     'reviews',
     'core.apps.CoreConfig'
@@ -107,6 +108,8 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static/'),)
 
 REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
@@ -120,7 +123,6 @@ DJOSER = {
 }
 
 AUTH_USER_MODEL = "users.User"
-
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 RECIPIENTS_EMAIL = 'drakyla.96@mail.ru'
