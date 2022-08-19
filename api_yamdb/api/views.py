@@ -1,6 +1,7 @@
+import django_filters
 from rest_framework import viewsets, mixins, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import get_object_or_404
-from rest_framework.pagination import LimitOffsetPagination
 
 from reviews import models as review_models
 
@@ -78,11 +79,32 @@ class GenreViewSet(CustomViewSet):
     search_fields = ('=name',)
 
 
+class TitleFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(
+        field_name='name',
+        lookup_expr='contains'
+    )
+    category = django_filters.CharFilter(
+        field_name='category__slug',
+        lookup_expr='exact'
+    )
+    genre = django_filters.CharFilter(
+        field_name='genre__slug',
+        lookup_expr='exact'
+    )
+
+    class Meta:
+        model = review_models.Title
+        fields = ['name', 'category', 'genre', 'year']
+
+
 class TitleViewSet(viewsets.ModelViewSet):
     """Endpoint модели Title."""
     queryset = review_models.Title.objects.all()
     permission_classes = (permissions.OnlyAdminOrRead,)
     pagination_class = paginators.StandardResultsSetPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PATCH',):
