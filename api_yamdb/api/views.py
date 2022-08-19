@@ -60,19 +60,20 @@ class CategoryViewSet(CustomViewSet):
     """Endpoint модели Category."""
     queryset = review_models.Category.objects.all()
     serializer_class = serializers.CategorySerializer
-    permission_classes = (permissions.OnlyAdmin,)
+    permission_classes = (permissions.OnlyAdminOrRead,)
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('=name',)
+    pagination_class = paginators.StandardResultsSetPagination
 
 
 class GenreViewSet(CustomViewSet):
     """Endpoint модели Genre."""
     queryset = review_models.Genre.objects.all()
     serializer_class = serializers.GenreSerializer
-    permission_classes = (permissions.OnlyAdmin,)
+    permission_classes = (permissions.OnlyAdminOrRead,)
     lookup_field = 'slug'
-    pagination_class = LimitOffsetPagination
+    pagination_class = paginators.StandardResultsSetPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('=name',)
 
@@ -80,8 +81,8 @@ class GenreViewSet(CustomViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     """Endpoint модели Title."""
     queryset = review_models.Title.objects.all()
-    permission_classes = (permissions.OnlyAdmin,)
-    pagination_class = LimitOffsetPagination
+    permission_classes = (permissions.OnlyAdminOrRead,)
+    pagination_class = paginators.StandardResultsSetPagination
 
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PATCH',):
