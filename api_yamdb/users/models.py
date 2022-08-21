@@ -11,14 +11,15 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from api_yamdb.settings import RECIPIENTS_EMAIL
 
-ROLE_CHOICES = (
-    ('user', 'Пользователь'),
-    ('moderator', 'Модератор '),
-    ('admin', 'Администратор')
-)
+USER_ROLE = 'user'
+MODERATOR_ROLE = 'moderator'
+ADMIN_ROLE = 'admin'
 
-DEFAULT_USER_ROLE = ROLE_CHOICES[0][0]
-SUPERUSER_ROLE = ROLE_CHOICES[2][0]
+ROLE_CHOICES = (
+    (USER_ROLE, 'Пользователь'),
+    (MODERATOR_ROLE, 'Модератор '),
+    (ADMIN_ROLE, 'Администратор')
+)
 
 
 class UserManager(BaseUserManager):
@@ -50,7 +51,7 @@ class UserManager(BaseUserManager):
         user = self.create_user(**kwargs)
         user.is_superuser = True
         user.is_staff = True
-        user.role = SUPERUSER_ROLE
+        user.role = ADMIN_ROLE
         user.save()
 
         return user
@@ -77,7 +78,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     bio = models.TextField(blank=True, null=True)
     role = models.CharField(
         max_length=20,
-        default=DEFAULT_USER_ROLE,
+        default=USER_ROLE,
         choices=ROLE_CHOICES
     )
 

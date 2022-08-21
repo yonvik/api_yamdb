@@ -20,7 +20,8 @@ class CustomViewSet(mixins.ListModelMixin,
 class ReviewViewSet(viewsets.ModelViewSet):
     """Endpoint модели Review."""
     serializer_class = serializers.ReviewSerializer
-    permission_classes = (permissions.AllowEditOrReadOnly,)
+    permission_classes = (
+        permissions.OnlyContributionAdminModeratorOrRead,)
     pagination_class = paginators.StandardResultsSetPagination
 
     def get_queryset(self):
@@ -40,7 +41,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     """Endpoint модели Comment."""
     serializer_class = serializers.CommentSerializer
-    permission_classes = (permissions.AllowEditOrReadOnly,)
+    permission_classes = (
+        permissions.OnlyContributionAdminModeratorOrRead,)
     pagination_class = paginators.StandardResultsSetPagination
 
     def get_queryset(self):
