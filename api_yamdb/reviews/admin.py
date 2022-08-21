@@ -20,6 +20,9 @@ class TitleAdmin(admin.ModelAdmin):
     """Предоставление категории жанров в админке."""
     list_display = ('id', 'name', 'year', 'category', 'get_genres')
 
+    def get_genres(self, obj):
+        return '\n'.join([str(genre) for genre in obj.genre.all()])
+
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
