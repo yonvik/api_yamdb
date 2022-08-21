@@ -1,12 +1,14 @@
 from rest_framework import permissions
 
+from users.models import MODERATOR_ROLE, ADMIN_ROLE
 
-class AllowEditOrReadOnly(permissions.BasePermission):
+
+class OnlyContributionAdminModeratorOrRead(permissions.BasePermission):
     """Редактировать могут только владелец, админ, модератор."""
 
     ALLOW_EDIT_ROLE = [
-        'moderator',
-        'admin'
+        MODERATOR_ROLE,
+        ADMIN_ROLE
     ]
 
     def has_permission(self, request, view):
@@ -22,11 +24,12 @@ class AllowEditOrReadOnly(permissions.BasePermission):
 
 class OnlyAdmin(permissions.BasePermission):
     """Только администратор."""
-    ALLOW_ROLE = 'admin'
+    ALLOW_ROLE = ADMIN_ROLE
 
     def has_permission(self, request, view):
         if request.user.is_authenticated:
             return request.user.role == self.ALLOW_ROLE
+        return False
 
 
 class OnlyAdminOrRead(OnlyAdmin):

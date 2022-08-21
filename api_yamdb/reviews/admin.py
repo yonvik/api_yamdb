@@ -18,7 +18,7 @@ class CategoryAdmin(admin.ModelAdmin):
 @admin.register(Title)
 class TitleAdmin(admin.ModelAdmin):
     """Предоставление категории жанров в админке."""
-    list_display = ('id', 'name', 'year', 'category', 'get_genres')
+    list_display = ('id', 'name', 'year', 'category', 'genre')
 
 
 @admin.register(Review)
