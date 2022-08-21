@@ -7,19 +7,34 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 
 from . import serializers
-from .renderers import UserJSONRenderer
 from .models import User
 from api.permissions import OnlyAdmin
 from api.paginators import StandardResultsSetPagination
+from django.core.mail import send_mail
+from api_yamdb.settings import RECIPIENTS_EMAIL
 
 
 class RegistrationAPIView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = serializers.RegistrationSerializer
-    renderer_classes = (UserJSONRenderer,)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
+        userpostname = serializer.initial_data.get('username')
+        if User.objects.filter(username=userpostname).exists():
+            user = get_object_or_404(User, username=userpostname)
+            data = user.secret_key
+            send_mail(
+                'Регистрация нового пользователя',
+                'Это ваш token для получения JWTТокена:' f'{data}',
+                RECIPIENTS_EMAIL,
+                [user.email],
+            )
+            message = (
+                f'Письмо с кодом подтверждения'
+                f'повторно направлено вам на почту!'
+            )
+            return Response(message, status=status.HTTP_200_OK)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
