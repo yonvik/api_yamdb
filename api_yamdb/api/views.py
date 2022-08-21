@@ -1,4 +1,5 @@
 import django_filters
+from django.db.models import Avg
 from rest_framework import viewsets, mixins, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import get_object_or_404
@@ -102,7 +103,8 @@ class TitleFilter(django_filters.FilterSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Endpoint модели Title."""
-    queryset = review_models.Title.objects.all()
+    queryset = review_models.Title.objects.annotate(
+        rating=Avg('reviews__score'))
     permission_classes = (permissions.OnlyAdminOrRead,)
     pagination_class = paginators.StandardResultsSetPagination
     filter_backends = (DjangoFilterBackend,)
