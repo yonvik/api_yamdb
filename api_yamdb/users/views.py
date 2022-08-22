@@ -1,3 +1,4 @@
+import email
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,7 +22,8 @@ class RegistrationAPIView(APIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         userpostname = serializer.initial_data.get('username')
-        if User.objects.filter(username=userpostname).exists():
+        userpostemail = serializer.initial_data.get('email')
+        if User.objects.filter(username=userpostname, email=userpostemail).exists():
             user = get_object_or_404(User, username=userpostname)
             data = user.secret_key
             send_mail(
@@ -35,8 +37,9 @@ class RegistrationAPIView(APIView):
                 f'повторно направлено вам на почту!'
             )
             return Response(message, status=status.HTTP_200_OK)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
+        if serializer.is_valid():
+            User.objects.create_user(
+                username=userpostname, email=userpostemail)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
