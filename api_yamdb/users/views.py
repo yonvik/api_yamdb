@@ -1,4 +1,6 @@
 import email
+from random import random
+from random import randint
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,9 +25,17 @@ class RegistrationAPIView(APIView):
         serializer = self.serializer_class(data=request.data)
         userpostname = serializer.initial_data.get('username')
         userpostemail = serializer.initial_data.get('email')
-        if User.objects.filter(username=userpostname, email=userpostemail).exists():
+        if User.objects.filter(email=userpostemail).exists():
+            message = ('Эта почта уже зарегистрирована')
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(username=userpostname).exists():
+            message = ('Этот никнейм уже занят!')
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(
+            username = userpostname, email=userpostemail).exists():
             user = get_object_or_404(User, username=userpostname)
-            data = user.secret_key
+            data = user.confirmation_code
+            print('1111111111111', data)
             send_mail(
                 'Регистрация нового пользователя',
                 'Это ваш token для получения JWTТокена:' f'{data}',
@@ -39,7 +49,19 @@ class RegistrationAPIView(APIView):
             return Response(message, status=status.HTTP_200_OK)
         if serializer.is_valid():
             User.objects.create_user(
-                username=userpostname, email=userpostemail)
+                username=userpostname, email=userpostemail, confirmation_code=randint(100000, 1000000))
+            user = get_object_or_404(User, username=userpostname)
+            data = user.confirmation_code
+            send_mail(
+                'Регистрация нового пользователя',
+                'Это ваш token для получения JWTТокена:' f'{data}',
+                RECIPIENTS_EMAIL,
+                [userpostemail],
+            )
+            message = (
+                f'Письмо с кодом подтверждения'
+                f'повторно направлено вам на почту!'
+            )
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -73,6 +95,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def user_info(self, request):
         user = get_object_or_404(User, pk=request.user.id)
         serializer = self.get_serializer(user, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

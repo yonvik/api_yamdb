@@ -1,5 +1,7 @@
 from collections import OrderedDict
-from dataclasses import field
+from dataclasses import field, fields
+from enum import unique
+from queue import Empty
 
 from rest_framework import serializers, status
 from django.contrib.auth import get_user_model
@@ -13,8 +15,7 @@ class RegistrationSerializer(serializers.Serializer):
     """ Сериализация регистрации пользователя и создания нового. """
     NOT_ALLOWED_USERNAMES = ['me']
     username = serializers.CharField()
-    email = serializers.EmailField(allow_blank=False)
-
+    email = serializers.EmailField()
 
     def validate_username(self, value):
         if value in self.NOT_ALLOWED_USERNAMES:
@@ -69,3 +70,4 @@ class UserInfoSerializer(RegistrationSerializer):
         fields = (
             'username', 'first_name', 'last_name', 'email', 'bio', 'role'
         )
+
