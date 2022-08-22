@@ -1,3 +1,4 @@
+import email
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -7,21 +8,38 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 
 from . import serializers
-from .renderers import UserJSONRenderer
 from .models import User
 from api.permissions import OnlyAdmin
 from api.paginators import StandardResultsSetPagination
+from django.core.mail import send_mail
+from api_yamdb.settings import RECIPIENTS_EMAIL
 
 
 class RegistrationAPIView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = serializers.RegistrationSerializer
-    renderer_classes = (UserJSONRenderer,)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
+        userpostname = serializer.initial_data.get('username')
+        userpostemail = serializer.initial_data.get('email')
+        if User.objects.filter(username=userpostname, email=userpostemail).exists():
+            user = get_object_or_404(User, username=userpostname)
+            data = user.secret_key
+            send_mail(
+                'Регистрация нового пользователя',
+                'Это ваш token для получения JWTТокена:' f'{data}',
+                RECIPIENTS_EMAIL,
+                [user.email],
+            )
+            message = (
+                f'Письмо с кодом подтверждения'
+                f'повторно направлено вам на почту!'
+            )
+            return Response(message, status=status.HTTP_200_OK)
+        if serializer.is_valid():
+            User.objects.create_user(
+                username=userpostname, email=userpostemail)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
