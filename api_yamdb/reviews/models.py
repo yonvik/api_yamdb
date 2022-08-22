@@ -5,27 +5,42 @@ from django.core.validators import MaxValueValidator
 from django.contrib.auth import get_user_model
 
 from .validators import validate_review_score
-from core.models import PubDateModel
 
 User = get_user_model()
 
 
-class Review(PubDateModel):
-    text = models.TextField()
-    score = models.IntegerField(validators=[validate_review_score])
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='reviews'
-    )
-    title = models.ForeignKey(
-        'Title',
-        on_delete=models.CASCADE,
-        related_name='reviews'
+class PubDateModel(models.Model):
+    """Абстрактная модель. Добавляет дату публикации."""
+    pub_date = models.DateTimeField(
+        'Дата публикации',
+        auto_now_add=True
     )
 
     class Meta:
-        ordering = ['pk']
+        abstract = True
+
+
+class BaseReviewComment(models.Model):
+    text = models.TextField()
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ['text']
+
+
+class Review(BaseReviewComment, PubDateModel):
+    score = models.IntegerField(validators=[validate_review_score])
+    title = models.ForeignKey(
+        'Title',
+        on_delete=models.CASCADE
+    )
+
+    class Meta(BaseReviewComment.Meta):
+        default_related_name = 'reviews'
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
         constraints = [
@@ -36,21 +51,15 @@ class Review(PubDateModel):
         ]
 
 
-class Comment(PubDateModel):
-    text = models.TextField()
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='comments'
-    )
+class Comment(BaseReviewComment, PubDateModel):
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
         related_name='comments'
     )
 
-    class Meta:
-        ordering = ['pk']
+    class Meta(BaseReviewComment.Meta):
+        default_related_name = 'comments'
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Коментарии'
 
