@@ -1,8 +1,10 @@
 import django_filters
+from django.db import IntegrityError
 from django.db.models import Avg
-from rest_framework import viewsets, mixins, filters
+from rest_framework import viewsets, mixins, filters, status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import get_object_or_404
+from rest_framework.response import Response
 
 from reviews import models as review_models
 
@@ -31,6 +33,13 @@ class ReviewViewSet(viewsets.ModelViewSet):
             pk=self.kwargs.get('title_id')
         )
         return title.reviews.all()
+
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, args, kwargs)
+        except IntegrityError:
+            return Response('Можно сотавить только 1 отзыв.',
+                            status.HTTP_400_BAD_REQUEST)
 
     def perform_create(self, serializer):
         author = self.request.user

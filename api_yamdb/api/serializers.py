@@ -1,14 +1,8 @@
-from django.db import IntegrityError
 from django.utils import timezone
-from rest_framework import serializers, status
-from rest_framework.exceptions import APIException
+from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
 from reviews import models as review_models
-
-
-class UniqueConstraintValidation(APIException):
-    status_code = status.HTTP_400_BAD_REQUEST
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -16,9 +10,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True,
         slug_field='username',
         default=serializers.CurrentUserDefault())
-    title = serializers.HiddenField(
-        default=None
-    )
+    title = serializers.HiddenField(default=None)
 
     class Meta:
         model = review_models.Review
@@ -30,12 +22,12 @@ class ReviewSerializer(serializers.ModelSerializer):
             'score',
             'pub_date'
         )
-
-    def create(self, validated_data):
-        try:
-            return super().create(validated_data)
-        except IntegrityError:
-            raise UniqueConstraintValidation()
+        validators = [
+            UniqueTogetherValidator(
+                queryset=review_models.Review.objects.all(),
+                fields=('title', 'author'),
+            )
+        ]
 
 
 class CommentSerializer(serializers.ModelSerializer):
