@@ -9,10 +9,10 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from django.db import IntegrityError
 
+from api.exceptions.import_csv import (UnexpectedFile, DoesNotExistFunction,
+                                       DataAlreadyExist, NotSetStaticfilesDir,
+                                       NotFoundPath)
 from reviews import models
-from core.exceptions.import_csv import (UnexpectedFile, DoesNotExistFunction,
-                                        DataAlreadyExist, NotSetStaticfilesDir,
-                                        NotFoundPath)
 
 
 class Command(BaseCommand):
