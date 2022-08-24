@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework import routers
 
-from users.views import RegistrationAPIView, JWTView, UserViewSet
+from users.views import UserViewSet
 from . import views
 
 router_v1 = routers.SimpleRouter()
@@ -31,7 +31,5 @@ router_v1.register(
     basename='genres')
 
 urlpatterns = [
-    path('v1/auth/signup/', RegistrationAPIView, name='signup'),
-    path('v1/auth/token/', JWTView, name='token'),
     path('v1/', include(router_v1.urls)),
 ]
