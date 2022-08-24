@@ -3,7 +3,6 @@ from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.exceptions import APIException
 from rest_framework.validators import UniqueTogetherValidator
-
 from reviews import models as review_models
 
 

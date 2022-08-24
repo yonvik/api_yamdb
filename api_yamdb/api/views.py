@@ -1,14 +1,11 @@
 import django_filters
 from django.db.models import Avg
-from rest_framework import viewsets, mixins, filters
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, mixins, viewsets
 from rest_framework.generics import get_object_or_404
-
 from reviews import models as review_models
 
-from . import serializers
-from . import permissions
-from . import paginators
+from . import paginators, permissions, serializers
 
 
 class CustomViewSet(mixins.ListModelMixin,

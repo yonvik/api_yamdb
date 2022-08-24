@@ -1,10 +1,10 @@
 from django.urls import path
 
-from .views import RegistrationAPIView, JWTView
+from .views import JWTView, registration
 
 app_name = 'users'
 
 urlpatterns = [
-    path('auth/signup/', RegistrationAPIView.as_view()),
+    path('auth/signup/', registration),
     path('auth/token/', JWTView.as_view())
 ]

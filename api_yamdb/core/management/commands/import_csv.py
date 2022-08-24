@@ -1,18 +1,17 @@
+import codecs
+import csv
 import os
 import re
-import csv
-import codecs
 import sys
 from typing import List
 
-from django.core.management.base import BaseCommand
+from core.exceptions.import_csv import (DataAlreadyExist, DoesNotExistFunction,
+                                        NotFoundPath, NotSetStaticfilesDir,
+                                        UnexpectedFile)
 from django.conf import settings
+from django.core.management.base import BaseCommand
 from django.db import IntegrityError
-
 from reviews import models
-from core.exceptions.import_csv import (UnexpectedFile, DoesNotExistFunction,
-                                        DataAlreadyExist, NotSetStaticfilesDir,
-                                        NotFoundPath)
 
 
 class Command(BaseCommand):
