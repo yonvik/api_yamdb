@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
@@ -6,15 +8,31 @@ from .models import USER_ROLE
 User = get_user_model()
 
 
+class UsernameField(serializers.Field):
+    NOT_ALLOWED_USERNAMES = ['me']
+    ERROR_REGEX_MESSAGE = ('username может состоять только из букв, '
+                           'цифр и спецсимволов: @.+-_')
+
+    def to_representation(self, value):
+        return value
+
+    def to_internal_value(self, data):
+        if data in self.NOT_ALLOWED_USERNAMES:
+            raise serializers.ValidationError(
+                'Поле username не может содержать значение: ', data
+            )
+        if re.search(r'^[\w.@+-]+\Z', data) is None:
+            raise serializers.ValidationError(self.ERROR_REGEX_MESSAGE)
+        if User.objects.filter(username=data).exists():
+            raise serializers.ValidationError(
+                "A user with this username already exists!")
+        return data
+
+
 class RegistrationSerializer(serializers.Serializer):
     """ Сериализация регистрации пользователя и создания нового. """
     NOT_ALLOWED_USERNAMES = ['me']
-    username = serializers.RegexField(
-        regex=r'^[\w.@+-]+\Z',
-        required=True,
-        error_messages={'invalid': ('username может состоять только из букв, '
-                                    'цифр и спецсимволов: @.+-_')}
-    )
+    username = UsernameField()
     email = serializers.EmailField()
 
     def validate_username(self, value):
@@ -25,20 +43,9 @@ class RegistrationSerializer(serializers.Serializer):
         return value
 
 
-def username_not_me(username):
-    if username == 'me':
-        raise serializers.ValidationError('использовать имя "me" запрещено!')
-    return username
-
-
 class UserSerializer(serializers.ModelSerializer):
     """User serializer"""
-    # username = serializers.RegexField(
-    #     regex=r'^[\w.@+-]+\Z',
-    #     required=True,
-    #     error_messages={'invalid': ('username может состоять только из букв, '
-    #                                 'цифр и спецсимволов: @.+-_')}
-    # )
+    username = UsernameField()
 
     class Meta:
         model = User
@@ -46,18 +53,7 @@ class UserSerializer(serializers.ModelSerializer):
             'username', 'first_name', 'last_name', 'email', 'bio', 'role'
         )
 
-    def validate_username(self, username):
-        return username_not_me(username)
-
     def validate_role(self, value):
         if self.context['request'].user.role == USER_ROLE:
             return USER_ROLE
         return value
-
-    # def update(self, instance, validated_data):
-    #     if self.context['request'].user.role != USER_ROLE:
-    #         role = validated_data.get('role', instance.role)
-    #         instance.role = role
-    #     instance.username = validated_data.get('username', instance.username)
-    #     instance.save()
-    #     return instance
