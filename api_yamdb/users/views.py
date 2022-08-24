@@ -90,7 +90,7 @@ class UserViewSet(viewsets.ModelViewSet):
         detail=False,
         url_path='me',
         permission_classes=(IsAuthenticated,),
-        serializer_class=serializers.UserInfoSerializer
+        serializer_class=serializers.UserSerializer
     )
     def user_info(self, request):
         user = get_object_or_404(User, pk=request.user.id)

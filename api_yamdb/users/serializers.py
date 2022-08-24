@@ -1,12 +1,8 @@
-from collections import OrderedDict
-from dataclasses import field, fields
-from enum import unique
-from queue import Empty
-
 from rest_framework import serializers, status
 from django.contrib.auth import get_user_model
 
 from . import exceptions
+from .models import USER_ROLE
 
 User = get_user_model()
 
@@ -14,7 +10,12 @@ User = get_user_model()
 class RegistrationSerializer(serializers.Serializer):
     """ Сериализация регистрации пользователя и создания нового. """
     NOT_ALLOWED_USERNAMES = ['me']
-    username = serializers.CharField()
+    username = serializers.RegexField(
+        regex=r'^[\w.@+-]+\Z',
+        required=True,
+        error_messages={'invalid': ('username может состоять только из букв, '
+                                    'цифр и спецсимволов @/./+/-/_')}
+    )
     email = serializers.EmailField()
 
     def validate_username(self, value):
@@ -42,7 +43,6 @@ class LoginSerializer(serializers.ModelSerializer):
         return value
 
 
-
 def username_not_me(username):
     if username == 'me':
         raise serializers.ValidationError('использовать имя "me" запрещено!')
@@ -61,13 +61,7 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_username(self, username):
         return username_not_me(username)
 
-
-class UserInfoSerializer(RegistrationSerializer):
-    role = serializers.CharField(read_only=True)
-
-    class Meta:
-        model = User
-        fields = (
-            'username', 'first_name', 'last_name', 'email', 'bio', 'role'
-        )
-
+    def validate_role(self, value):
+        if self.context['request'].user.role == USER_ROLE:
+            return USER_ROLE
+        return value
