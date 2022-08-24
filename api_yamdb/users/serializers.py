@@ -1,7 +1,6 @@
-from rest_framework import serializers, status
+from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
-from . import exceptions
 from .models import USER_ROLE
 
 User = get_user_model()
@@ -14,7 +13,7 @@ class RegistrationSerializer(serializers.Serializer):
         regex=r'^[\w.@+-]+\Z',
         required=True,
         error_messages={'invalid': ('username может состоять только из букв, '
-                                    'цифр и спецсимволов @/./+/-/_')}
+                                    'цифр и спецсимволов: @.+-_')}
     )
     email = serializers.EmailField()
 
@@ -22,23 +21,6 @@ class RegistrationSerializer(serializers.Serializer):
         if value in self.NOT_ALLOWED_USERNAMES:
             raise serializers.ValidationError(
                 'Поле username не может содержать значение: ', value
-            )
-        return value
-
-
-class LoginSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(max_length=255, required=True)
-    confirmation_code = serializers.CharField(max_length=256, required=True)
-
-    class Meta:
-        model = User
-        fields = '__all__'
-
-    def validate_username(self, value):
-        if not User.objects.filter(username=value).exists():
-            raise exceptions.CustomValidation(
-                'user does not exist',
-                status_code=status.HTTP_404_NOT_FOUND
             )
         return value
 
@@ -51,6 +33,12 @@ def username_not_me(username):
 
 class UserSerializer(serializers.ModelSerializer):
     """User serializer"""
+    # username = serializers.RegexField(
+    #     regex=r'^[\w.@+-]+\Z',
+    #     required=True,
+    #     error_messages={'invalid': ('username может состоять только из букв, '
+    #                                 'цифр и спецсимволов: @.+-_')}
+    # )
 
     class Meta:
         model = User
@@ -65,3 +53,11 @@ class UserSerializer(serializers.ModelSerializer):
         if self.context['request'].user.role == USER_ROLE:
             return USER_ROLE
         return value
+
+    # def update(self, instance, validated_data):
+    #     if self.context['request'].user.role != USER_ROLE:
+    #         role = validated_data.get('role', instance.role)
+    #         instance.role = role
+    #     instance.username = validated_data.get('username', instance.username)
+    #     instance.save()
+    #     return instance
