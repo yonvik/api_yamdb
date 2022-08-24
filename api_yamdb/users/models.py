@@ -37,6 +37,7 @@ class User(AbstractUser):
         default=USER_ROLE,
         choices=ROLE_CHOICES
     )
+    email = models.EmailField(unique=True)
 
     def __str__(self):
         return self.email
