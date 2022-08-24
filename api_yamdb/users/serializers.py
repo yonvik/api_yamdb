@@ -31,16 +31,8 @@ class UsernameField(serializers.Field):
 
 class RegistrationSerializer(serializers.Serializer):
     """ Сериализация регистрации пользователя и создания нового. """
-    NOT_ALLOWED_USERNAMES = ['me']
     username = UsernameField()
     email = serializers.EmailField()
-
-    def validate_username(self, value):
-        if value in self.NOT_ALLOWED_USERNAMES:
-            raise serializers.ValidationError(
-                'Поле username не может содержать значение: ', value
-            )
-        return value
 
 
 class UserSerializer(serializers.ModelSerializer):
