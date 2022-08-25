@@ -26,7 +26,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'django_filters',
-    'users',
     'api',
     'reviews',
 ]
@@ -115,7 +114,7 @@ REST_FRAMEWORK = {
 }
 
 
-AUTH_USER_MODEL = "users.User"
+AUTH_USER_MODEL = "reviews.User"
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 RECIPIENTS_EMAIL = 'drakyla.96@mail.ru'
