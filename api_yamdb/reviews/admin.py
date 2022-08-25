@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import Category, Comment, Genre, Review, Title
+from .models import Category, Comment, Genre, Review, Title, User
+
+
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    """Предоставление категории пользователей в админке."""
+    list_display = ('id', 'username', 'email', 'password')
 
 
 @admin.register(Comment)
