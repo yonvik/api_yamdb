@@ -1,25 +1,22 @@
 from random import randint
 
 import django_filters
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
-from django.conf import settings
-from rest_framework import viewsets, mixins, filters, status
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from reviews import models as review_models
 
-from . import serializers
-from . import permissions
-from . import paginators
+from . import paginators, permissions, serializers
 
 User = get_user_model()
 
@@ -154,17 +151,14 @@ class RegistrationAPIView(APIView):
                 username=userpostname, email=userpostemail).exists():
             user = get_object_or_404(User, username=userpostname)
             data = user.confirmation_code
-            print('1111111111111', data)
             send_mail(
                 'Регистрация нового пользователя',
                 'Это ваш token для получения JWTТокена:' f'{data}',
                 settings.RECIPIENTS_EMAIL,
                 [user.email],
             )
-            message = (
-                f'Письмо с кодом подтверждения'
-                f'повторно направлено вам на почту!'
-            )
+            message = ('Письмо с кодом подтверждения\n'
+                       'повторно направлено вам на почту!')
             return Response(message, status=status.HTTP_200_OK)
         if serializer.is_valid():
             user = User.objects.create_user(
@@ -180,10 +174,6 @@ class RegistrationAPIView(APIView):
                 'Это ваш token для получения JWTТокена:' f'{data}',
                 settings.RECIPIENTS_EMAIL,
                 [userpostemail],
-            )
-            message = (
-                f'Письмо с кодом подтверждения'
-                f'повторно направлено вам на почту!'
             )
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

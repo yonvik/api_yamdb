@@ -4,7 +4,6 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
-
 from reviews import models as review_models
 
 User = get_user_model()
@@ -64,23 +63,15 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    category = CategorySerializer()
-    genre = GenreSerializer(many=True)
-    rating = serializers.IntegerField()
+    category = CategorySerializer(read_only=True)
+    genre = GenreSerializer(many=True, read_only=True)
+    rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = review_models.Title
         fields = ('id', 'name', 'category', 'genre',
                   'year', 'description', 'rating',
                   )
-        extra_kwargs = {
-            'name': {'read_only': True},
-            'category': {'read_only': True},
-            'genre': {'read_only': True},
-            'year': {'read_only': True},
-            'description': {'read_only': True},
-            'rating': {'read_only': True},
-        }
         validators = [
             UniqueTogetherValidator(
                 queryset=review_models.Title.objects.all(),
