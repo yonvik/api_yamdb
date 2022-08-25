@@ -130,7 +130,6 @@ class Category(BaseGenreCategory):
 
 class Genre(BaseGenreCategory):
     class Meta:
-        ordering = ('name',)
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
