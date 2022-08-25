@@ -1,10 +1,7 @@
-from datetime import datetime
-
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MaxValueValidator
 from django.db import models
 
-from .validators import validate_review_score
+from .validators import validate_review_score, validate_year_title
 
 USER_ROLE = 'user'
 MODERATOR_ROLE = 'moderator'
@@ -114,26 +111,24 @@ class Comment(BaseReviewComment, PubDateModel):
         verbose_name_plural = 'Коментарии'
 
 
-class Category(models.Model):
-    name = models.CharField('Название категории', max_length=256)
-    slug = models.SlugField('Слаг', unique=True)
+class BaseGenreCategory(models.Model):
+    slug = models.SlugField('Слаг', unique=True, max_length=50)
+    name = models.CharField('Название', max_length=256)
 
     def __str__(self):
         return self.name
 
     class Meta:
         ordering = ('name',)
+
+
+class Category(BaseGenreCategory):
+    class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
 
-class Genre(models.Model):
-    name = models.CharField('Название жанра', max_length=256)
-    slug = models.SlugField('Слаг', unique=True)
-
-    def __str__(self):
-        return self.name
-
+class Genre(BaseGenreCategory):
     class Meta:
         ordering = ('name',)
         verbose_name = 'Жанр'
@@ -142,9 +137,9 @@ class Genre(models.Model):
 
 class Title(models.Model):
     name = models.CharField('Название', max_length=200)
-    year = models.PositiveSmallIntegerField(
-        'Год выпуска',
-        validators=(MaxValueValidator(datetime.now().year),)
+    year = models.IntegerField(
+        validators=[validate_year_title],
+        verbose_name='Дата выпуска'
     )
     description = models.TextField('Описание', blank=True, null=True)
     genre = models.ManyToManyField(Genre, 'Жанр', blank=True)
