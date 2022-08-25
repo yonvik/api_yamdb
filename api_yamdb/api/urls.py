@@ -1,11 +1,10 @@
 from django.urls import path, include
 from rest_framework import routers
 
-from users.views import UserViewSet
 from . import views
 
 router_v1 = routers.SimpleRouter()
-router_v1.register('users', UserViewSet, basename='users')
+router_v1.register('users', views.UserViewSet, basename='users')
 router_v1.register(
     r'titles',
     views.TitleViewSet,
@@ -32,4 +31,6 @@ router_v1.register(
 
 urlpatterns = [
     path('v1/', include(router_v1.urls)),
+    path('v1/auth/signup/', views.RegistrationAPIView.as_view()),
+    path('v1/auth/token/', views.JWTView.as_view())
 ]

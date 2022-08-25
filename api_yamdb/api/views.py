@@ -1,16 +1,27 @@
+from random import randint
+
 import django_filters
+from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Avg
-from rest_framework import viewsets, mixins, filters, status
 from django_filters.rest_framework import DjangoFilterBackend
+from django.conf import settings
+from rest_framework import viewsets, mixins, filters, status
+from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews import models as review_models
 
 from . import serializers
 from . import permissions
 from . import paginators
+
+User = get_user_model()
 
 
 class CustomViewSet(mixins.ListModelMixin,
@@ -123,3 +134,96 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.request.method in ('POST', 'PATCH',):
             return serializers.TitleCreateSerializer
         return serializers.TitleSerializer
+
+
+class RegistrationAPIView(APIView):
+    permission_classes = (AllowAny,)
+    serializer_class = serializers.RegistrationSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        userpostname = serializer.initial_data.get('username')
+        userpostemail = serializer.initial_data.get('email')
+        if User.objects.filter(email=userpostemail).exists():
+            message = ('Эта почта уже зарегистрирована')
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(username=userpostname).exists():
+            message = ('Этот никнейм уже занят!')
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(
+                username=userpostname, email=userpostemail).exists():
+            user = get_object_or_404(User, username=userpostname)
+            data = user.confirmation_code
+            print('1111111111111', data)
+            send_mail(
+                'Регистрация нового пользователя',
+                'Это ваш token для получения JWTТокена:' f'{data}',
+                settings.RECIPIENTS_EMAIL,
+                [user.email],
+            )
+            message = (
+                f'Письмо с кодом подтверждения'
+                f'повторно направлено вам на почту!'
+            )
+            return Response(message, status=status.HTTP_200_OK)
+        if serializer.is_valid():
+            user = User.objects.create_user(
+                username=userpostname,
+                email=userpostemail,
+                confirmation_code=randint(100000, 1000000))
+            user.role = request.data.get('role'),
+            user.save()
+            user = get_object_or_404(User, username=userpostname)
+            data = user.confirmation_code
+            send_mail(
+                'Регистрация нового пользователя',
+                'Это ваш token для получения JWTТокена:' f'{data}',
+                settings.RECIPIENTS_EMAIL,
+                [userpostemail],
+            )
+            message = (
+                f'Письмо с кодом подтверждения'
+                f'повторно направлено вам на почту!'
+            )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class JWTView(APIView):
+
+    def post(self, request):
+        username = request.data.get('username')
+        confirmation_code = request.data.get('confirmation_code')
+        if not username or not confirmation_code:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        user = get_object_or_404(User, username=username)
+        if user.confirmation_code == confirmation_code:
+            token = RefreshToken.for_user(user)
+            return Response({'token': str(token.access_token)},
+                            status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = serializers.UserSerializer
+    permission_classes = (permissions.OnlyAdmin,)
+    lookup_field = 'username'
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    search_fields = ('username',)
+    pagination_class = paginators.StandardResultsSetPagination
+
+    @action(
+        methods=('get', 'patch'),
+        detail=False,
+        url_path='me',
+        permission_classes=(IsAuthenticated,),
+        serializer_class=serializers.UserSerializer
+    )
+    def user_info(self, request):
+        user = get_object_or_404(User, pk=request.user.id)
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
