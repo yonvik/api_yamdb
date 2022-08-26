@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from reviews import models as review_models
-from reviews.validators import validate_year_title
+from reviews.validators import validate_title_year
 
 User = get_user_model()
 
@@ -91,7 +91,7 @@ class TitleCreateSerializer(serializers.ModelSerializer):
                   'genre', 'category',)
 
     def validate_year(self, value):
-        return validate_year_title(value)
+        return validate_title_year(value)
 
 
 class UsernameField(serializers.Field):

@@ -14,7 +14,7 @@ def validate_review_score(value: int):
         )
 
 
-def validate_year_title(value):
+def validate_title_year(value):
     year = dt.date.today().year
     if value > year:
         raise ValidationError(
