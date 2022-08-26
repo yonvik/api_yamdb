@@ -25,7 +25,11 @@ class CustomViewSet(mixins.ListModelMixin,
                     mixins.CreateModelMixin,
                     mixins.DestroyModelMixin,
                     viewsets.GenericViewSet):
-    pass
+    permission_classes = (permissions.OnlyAdminOrRead,)
+    lookup_field = 'slug'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('=name',)
+    pagination_class = paginators.StandardResultsSetPagination
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -81,22 +85,12 @@ class CategoryViewSet(CustomViewSet):
     """Endpoint модели Category."""
     queryset = review_models.Category.objects.all()
     serializer_class = serializers.CategorySerializer
-    permission_classes = (permissions.OnlyAdminOrRead,)
-    lookup_field = 'slug'
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('=name',)
-    pagination_class = paginators.StandardResultsSetPagination
 
 
 class GenreViewSet(CustomViewSet):
     """Endpoint модели Genre."""
     queryset = review_models.Genre.objects.all()
     serializer_class = serializers.GenreSerializer
-    permission_classes = (permissions.OnlyAdminOrRead,)
-    lookup_field = 'slug'
-    pagination_class = paginators.StandardResultsSetPagination
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('=name',)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
