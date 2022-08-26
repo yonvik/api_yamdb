@@ -104,9 +104,9 @@ class TitleViewSet(viewsets.ModelViewSet):
     ordering_fields = ('-rating',)
 
     def get_serializer_class(self):
-        if self.request.method in ('POST', 'PATCH',):
-            return serializers.TitleCreateSerializer
-        return serializers.TitleSerializer
+        if self.action in ('retrieve', 'list'):
+            return serializers.TitleSerializer
+        return serializers.TitleCreateSerializer
 
 
 class RegistrationAPIView(APIView):
