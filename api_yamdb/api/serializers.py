@@ -1,8 +1,3 @@
-from django.utils import timezone
-from django.contrib.auth import get_user_model
-from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
-from reviews import models as review_models
 from reviews.validators import validate_year_title
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
