@@ -1,7 +1,8 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from .validators import validate_review_score, validate_year_title
+from . import validators
 
 USER_ROLE = 'user'
 MODERATOR_ROLE = 'moderator'
@@ -9,37 +10,41 @@ ADMIN_ROLE = 'admin'
 
 ROLE_CHOICES = (
     (USER_ROLE, 'Пользователь'),
-    (MODERATOR_ROLE, 'Модератор '),
+    (MODERATOR_ROLE, 'Модератор'),
     (ADMIN_ROLE, 'Администратор')
 )
 
 MAX_LENGTH_USERNAME = 255
 MAX_LENGTH_CONFIRMATION_CODE = 256
+MAX_LENGTH_EMAIL = 255
 
-
-def get_max_length_role(roles):
-    max_length = len(roles[1][0])
-    for i in range(1, len(roles)):
-        role_len = len(roles[i][0])
-        if role_len > max_length:
-            max_length = role_len
-    return max_length
+MINIMAL_SCORE = 1
+MAXIMUM_SCORE = 10
 
 
 class User(AbstractUser):
+    username = models.CharField(
+        max_length=MAX_LENGTH_USERNAME,
+        unique=True,
+        help_text=(f'Required. {MAX_LENGTH_USERNAME} characters or fewer. '
+                   'Letters, digits and @/./+/-/_ only.'),
+        validators=[validators.username_validator],
+        error_messages={
+            'unique': "A user with that username already exists.",
+        },
+    )
     confirmation_code = models.CharField(
         max_length=MAX_LENGTH_CONFIRMATION_CODE,
-        db_index=True,
         unique=True,
         null=True
     )
     bio = models.TextField(blank=True, null=True)
     role = models.CharField(
-        max_length=get_max_length_role(ROLE_CHOICES),
+        max_length=len(max([choice[0] for choice in ROLE_CHOICES], key=len)),
         default=USER_ROLE,
         choices=ROLE_CHOICES
     )
-    email = models.EmailField(unique=True)
+    email = models.EmailField(max_length=MAX_LENGTH_EMAIL, unique=True)
 
     def __str__(self):
         return self.email
@@ -80,7 +85,15 @@ class BaseReviewComment(models.Model):
 
 
 class Review(BaseReviewComment, PubDateModel):
-    score = models.IntegerField(validators=[validate_review_score])
+    score = models.IntegerField(validators=[
+        MaxValueValidator(
+            limit_value=MAXIMUM_SCORE,
+            message=f'Оценка не может быть больше {MAXIMUM_SCORE}'),
+        MinValueValidator(
+            limit_value=MINIMAL_SCORE,
+            message=f'Оценка не может быть меньше {MINIMAL_SCORE}'
+        )
+    ])
     title = models.ForeignKey(
         'Title',
         on_delete=models.CASCADE
@@ -102,7 +115,6 @@ class Comment(BaseReviewComment, PubDateModel):
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
-        related_name='comments'
     )
 
     class Meta(BaseReviewComment.Meta):
@@ -119,6 +131,7 @@ class BaseGenreCategory(models.Model):
         return self.name
 
     class Meta:
+        abstract = True
         ordering = ('name',)
 
 
@@ -137,7 +150,7 @@ class Genre(BaseGenreCategory):
 class Title(models.Model):
     name = models.CharField('Название', max_length=200)
     year = models.IntegerField(
-        validators=[validate_year_title],
+        validators=[validators.validate_year_title],
         verbose_name='Дата выпуска'
     )
     description = models.TextField('Описание', blank=True, null=True)

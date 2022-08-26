@@ -2,7 +2,6 @@ from random import randint
 
 import django_filters
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Avg
@@ -14,11 +13,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from reviews import models as review_models
-
-from . import paginators, permissions, serializers
-
-User = get_user_model()
+from . import paginators
+from . import permissions
+from . import serializers
 
 
 class CustomViewSet(mixins.ListModelMixin,
@@ -35,11 +34,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
         permissions.OnlyContributionAdminModeratorOrRead,)
     pagination_class = paginators.StandardResultsSetPagination
 
-    def get_queryset(self):
-        title = get_object_or_404(
+    def get_title(self):
+        return get_object_or_404(
             review_models.Title,
             pk=self.kwargs.get('title_id')
         )
+
+    def get_queryset(self):
+        title = self.get_title()
         return title.reviews.all()
 
     def create(self, request, *args, **kwargs):
@@ -51,8 +53,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         author = self.request.user
-        title = get_object_or_404(review_models.Title,
-                                  pk=self.kwargs.get('title_id'))
+        title = self.get_title()
         serializer.save(author=author, title=title)
 
 
@@ -63,17 +64,18 @@ class CommentViewSet(viewsets.ModelViewSet):
         permissions.OnlyContributionAdminModeratorOrRead,)
     pagination_class = paginators.StandardResultsSetPagination
 
+    def get_review(self):
+        return get_object_or_404(review_models.Review,
+                                 pk=self.kwargs['review_id'],
+                                 title__pk=self.kwargs['title_id'])
+
     def get_queryset(self):
-        review = get_object_or_404(review_models.Review,
-                                   pk=self.kwargs['review_id'],
-                                   title__pk=self.kwargs['title_id'])
+        review = self.get_review()
         return review.comments.all()
 
     def perform_create(self, serializer):
         author = self.request.user
-        review = get_object_or_404(review_models.Review,
-                                   pk=self.kwargs['review_id'],
-                                   title__pk=self.kwargs['title_id'])
+        review = self.get_review()
         serializer.save(author=author, review=review)
 
 
@@ -141,15 +143,15 @@ class RegistrationAPIView(APIView):
         serializer = self.serializer_class(data=request.data)
         userpostname = serializer.initial_data.get('username')
         userpostemail = serializer.initial_data.get('email')
-        if User.objects.filter(email=userpostemail).exists():
+        if review_models.User.objects.filter(email=userpostemail).exists():
             message = ('Эта почта уже зарегистрирована')
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
-        if User.objects.filter(username=userpostname).exists():
+        if review_models.User.objects.filter(username=userpostname).exists():
             message = ('Этот никнейм уже занят!')
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
-        if User.objects.filter(
+        if review_models.User.objects.filter(
                 username=userpostname, email=userpostemail).exists():
-            user = get_object_or_404(User, username=userpostname)
+            user = get_object_or_404(review_models.User, username=userpostname)
             data = user.confirmation_code
             send_mail(
                 'Регистрация нового пользователя',
@@ -161,13 +163,13 @@ class RegistrationAPIView(APIView):
                        'повторно направлено вам на почту!')
             return Response(message, status=status.HTTP_200_OK)
         if serializer.is_valid():
-            user = User.objects.create_user(
+            user = review_models.User.objects.create_user(
                 username=userpostname,
                 email=userpostemail,
                 confirmation_code=randint(100000, 1000000))
             user.role = request.data.get('role'),
             user.save()
-            user = get_object_or_404(User, username=userpostname)
+            user = get_object_or_404(review_models.User, username=userpostname)
             data = user.confirmation_code
             send_mail(
                 'Регистрация нового пользователя',
@@ -180,13 +182,19 @@ class RegistrationAPIView(APIView):
 
 
 class JWTView(APIView):
+    serializer_class = serializers.LoginSerializer
+
+    def get_serializer(self):
+        return self.serializer_class(data=self.request.data)
 
     def post(self, request):
-        username = request.data.get('username')
+        serializer = self.get_serializer()
+        serializer.is_valid(raise_exception=True)
+        username = serializer.data.get('username')
         confirmation_code = request.data.get('confirmation_code')
-        if not username or not confirmation_code:
+        if not confirmation_code:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        user = get_object_or_404(User, username=username)
+        user = get_object_or_404(review_models.User, username=username)
         if user.confirmation_code == confirmation_code:
             token = RefreshToken.for_user(user)
             return Response({'token': str(token.access_token)},
@@ -195,7 +203,7 @@ class JWTView(APIView):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = review_models.User.objects.all()
     serializer_class = serializers.UserSerializer
     permission_classes = (permissions.OnlyAdmin,)
     lookup_field = 'username'
@@ -211,9 +219,12 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer_class=serializers.UserSerializer
     )
     def user_info(self, request):
-        user = get_object_or_404(User, pk=request.user.id)
+        user = get_object_or_404(review_models.User, pk=request.user.id)
         serializer = self.get_serializer(user, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
+            if request.user.role == review_models.USER_ROLE:
+                serializer.save(role=review_models.USER_ROLE)
+            else:
+                serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -29,8 +29,13 @@ router_v1.register(
     views.GenreViewSet,
     basename='genres')
 
+auth_urls = [
+    path('auth/signup/', views.RegistrationAPIView.as_view(),
+         name='signup'),
+    path('auth/token/', views.JWTView.as_view(), name='token')
+]
+
 urlpatterns = [
     path('v1/', include(router_v1.urls)),
-    path('v1/auth/signup/', views.RegistrationAPIView.as_view()),
-    path('v1/auth/token/', views.JWTView.as_view())
+    path('v1/', include(auth_urls))
 ]
