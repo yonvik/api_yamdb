@@ -1,6 +1,5 @@
 from random import randint
 
-import django_filters
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import IntegrityError
@@ -14,17 +13,22 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews import models as review_models
 from . import paginators
 from . import permissions
 from . import serializers
+from .filters import TitleFilter
+from reviews import models as review_models
 
 
 class CustomViewSet(mixins.ListModelMixin,
                     mixins.CreateModelMixin,
                     mixins.DestroyModelMixin,
                     viewsets.GenericViewSet):
-    pass
+    permission_classes = (permissions.OnlyAdminOrRead,)
+    lookup_field = 'slug'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('=name',)
+    pagination_class = paginators.StandardResultsSetPagination
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -83,41 +87,12 @@ class CategoryViewSet(CustomViewSet):
     """Endpoint модели Category."""
     queryset = review_models.Category.objects.all()
     serializer_class = serializers.CategorySerializer
-    permission_classes = (permissions.OnlyAdminOrRead,)
-    lookup_field = 'slug'
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('=name',)
-    pagination_class = paginators.StandardResultsSetPagination
 
 
 class GenreViewSet(CustomViewSet):
     """Endpoint модели Genre."""
     queryset = review_models.Genre.objects.all()
     serializer_class = serializers.GenreSerializer
-    permission_classes = (permissions.OnlyAdminOrRead,)
-    lookup_field = 'slug'
-    pagination_class = paginators.StandardResultsSetPagination
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('=name',)
-
-
-class TitleFilter(django_filters.FilterSet):
-    name = django_filters.CharFilter(
-        field_name='name',
-        lookup_expr='contains'
-    )
-    category = django_filters.CharFilter(
-        field_name='category__slug',
-        lookup_expr='exact'
-    )
-    genre = django_filters.CharFilter(
-        field_name='genre__slug',
-        lookup_expr='exact'
-    )
-
-    class Meta:
-        model = review_models.Title
-        fields = ['name', 'category', 'genre', 'year']
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -128,11 +103,12 @@ class TitleViewSet(viewsets.ModelViewSet):
     pagination_class = paginators.StandardResultsSetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
+    ordering_fields = ('-rating',)
 
     def get_serializer_class(self):
-        if self.request.method in ('POST', 'PATCH',):
-            return serializers.TitleCreateSerializer
-        return serializers.TitleSerializer
+        if self.action in ('retrieve', 'list'):
+            return serializers.TitleSerializer
+        return serializers.TitleCreateSerializer
 
 
 class RegistrationAPIView(APIView):

@@ -1,8 +1,7 @@
 import re
+import datetime as dt
 
 from django.core.exceptions import ValidationError
-from django.utils import timezone
-from rest_framework import serializers
 
 MINIMAL_SCORE = 1
 MAXIMUM_SCORE = 10
@@ -21,9 +20,8 @@ def username_validator(value: str):
 
 
 def validate_year_title(value):
-    year = timezone.datetime.now().year
-    if value > timezone.datetime.now().year:
-        raise serializers.ValidationError(
-            f'Год выпуска не может быть больше {year}'
-        )
+    year = dt.date.today().year
+    if value > year:
+        raise ValidationError(
+            f'Проверьте год ({year}), он не должен быть больше текущего')
     return value
