@@ -1,12 +1,14 @@
-import re
-
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from reviews import models as review_models
 from reviews.validators import validate_year_title
+from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
-User = get_user_model()
+from reviews import models as review_models
+from reviews.validators import username_validator
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -29,7 +31,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         validators = [
             UniqueTogetherValidator(
                 queryset=review_models.Review.objects.all(),
-                fields=('title', 'author'),
+                fields=('title', 'author',)
             )
         ]
 
@@ -94,44 +96,34 @@ class TitleCreateSerializer(serializers.ModelSerializer):
         return validate_year_title(value)
 
 
-class UsernameField(serializers.Field):
-    NOT_ALLOWED_USERNAMES = ['me']
-    ERROR_REGEX_MESSAGE = ('username может состоять только из букв, '
-                           'цифр и спецсимволов: @.+-_')
-
-    def to_representation(self, value):
-        return value
-
-    def to_internal_value(self, data):
-        if data in self.NOT_ALLOWED_USERNAMES:
-            raise serializers.ValidationError(
-                'Поле username не может содержать значение: ', data
-            )
-        if re.search(r'^[\w.@+-]+\Z', data) is None:
-            raise serializers.ValidationError(self.ERROR_REGEX_MESSAGE)
-        if User.objects.filter(username=data).exists():
-            raise serializers.ValidationError(
-                "A user with this username already exists!")
-        return data
-
-
 class RegistrationSerializer(serializers.Serializer):
     """ Сериализация регистрации пользователя и создания нового. """
-    username = UsernameField()
-    email = serializers.EmailField()
+    username = serializers.CharField(
+        max_length=review_models.MAX_LENGTH_USERNAME,
+        validators=[username_validator]
+    )
+    email = serializers.EmailField(max_length=review_models.MAX_LENGTH_EMAIL)
+
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(
+        max_length=review_models.MAX_LENGTH_USERNAME,
+        validators=[username_validator]
+    )
 
 
 class UserSerializer(serializers.ModelSerializer):
     """User serializer"""
-    username = UsernameField()
+    username = serializers.CharField(
+        max_length=review_models.MAX_LENGTH_USERNAME,
+        validators=[
+            UniqueValidator(queryset=review_models.User.objects.all()),
+            username_validator
+        ]
+    )
 
     class Meta:
-        model = User
+        model = review_models.User
         fields = (
             'username', 'first_name', 'last_name', 'email', 'bio', 'role'
         )
-
-    def validate_role(self, value):
-        if self.context['request'].user.role == review_models.USER_ROLE:
-            return review_models.USER_ROLE
-        return value

@@ -1,17 +1,22 @@
+import re
 import datetime as dt
 
 from django.core.exceptions import ValidationError
 
 MINIMAL_SCORE = 1
 MAXIMUM_SCORE = 10
+NOT_ALLOWED_USERNAMES = ['me']
 
 
-def validate_review_score(value: int):
-    if MINIMAL_SCORE > value or value > MAXIMUM_SCORE:
+def username_validator(value: str):
+    if value in NOT_ALLOWED_USERNAMES:
         raise ValidationError(
-            (f'Оценка должна быть больше {MINIMAL_SCORE} и '
-             f'меньше {MAXIMUM_SCORE}: {value}')
+            'Поле username не может содержать значение: ', value
         )
+    if re.search(r'^[\w.@+-]+\Z', value) is None:
+        raise ValidationError(
+            'username может состоять только из букв, '
+            'цифр и спецсимволов: @.+-_')
 
 
 def validate_year_title(value):
