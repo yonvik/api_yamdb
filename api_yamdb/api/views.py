@@ -1,6 +1,5 @@
 from random import randint
 
-import django_filters
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
@@ -17,6 +16,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from reviews import models as review_models
 
 from . import paginators, permissions, serializers
+from .filters import TitleFilter
 
 User = get_user_model()
 
@@ -99,25 +99,6 @@ class GenreViewSet(CustomViewSet):
     search_fields = ('=name',)
 
 
-class TitleFilter(django_filters.FilterSet):
-    name = django_filters.CharFilter(
-        field_name='name',
-        lookup_expr='contains'
-    )
-    category = django_filters.CharFilter(
-        field_name='category__slug',
-        lookup_expr='exact'
-    )
-    genre = django_filters.CharFilter(
-        field_name='genre__slug',
-        lookup_expr='exact'
-    )
-
-    class Meta:
-        model = review_models.Title
-        fields = ['name', 'category', 'genre', 'year']
-
-
 class TitleViewSet(viewsets.ModelViewSet):
     """Endpoint модели Title."""
     queryset = review_models.Title.objects.annotate(
@@ -126,6 +107,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     pagination_class = paginators.StandardResultsSetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
+    ordering_fields = ('-rating',)
 
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PATCH',):

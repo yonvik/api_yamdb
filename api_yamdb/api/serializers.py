@@ -1,10 +1,10 @@
 import re
 
 from django.contrib.auth import get_user_model
-from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from reviews import models as review_models
+from reviews.validators import validate_year_title
 
 User = get_user_model()
 
@@ -63,22 +63,17 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)
-    genre = GenreSerializer(many=True, read_only=True)
-    rating = serializers.IntegerField(read_only=True)
+    category = CategorySerializer()
+    genre = GenreSerializer(many=True)
+    rating = serializers.IntegerField()
 
     class Meta:
         model = review_models.Title
         fields = ('id', 'name', 'category', 'genre',
                   'year', 'description', 'rating',
                   )
-        validators = [
-            UniqueTogetherValidator(
-                queryset=review_models.Title.objects.all(),
-                fields=('name', 'year'),
-                message='Данное произведение существует'
-            )
-        ]
+
+        read_only_fields = ('__all__',)
 
 
 class TitleCreateSerializer(serializers.ModelSerializer):
@@ -96,12 +91,7 @@ class TitleCreateSerializer(serializers.ModelSerializer):
                   'genre', 'category',)
 
     def validate_year(self, value):
-        year = timezone.datetime.now().year
-        if value > year:
-            raise serializers.ValidationError(
-                f'Год выпуска больше {year}'
-            )
-        return value
+        return validate_year_title(value)
 
 
 class UsernameField(serializers.Field):
