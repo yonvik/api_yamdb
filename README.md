@@ -72,6 +72,6 @@ Linux/Mac: `sorce venv/bin/activate`
 - Git
 
 ### Авторы:
-- Янковский Андрей
-- Митин Константин
-- Мясищев Максим
+- Янковский Андрей https://github.com/yonvik
+- Митин Константин https://github.com/cmitin1
+- Мясищев Максим https://github.com/mnmyasis
