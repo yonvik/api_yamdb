@@ -2,7 +2,6 @@ from random import randint
 
 from django.conf import settings
 from django.core.mail import send_mail
-from django.db import IntegrityError
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
@@ -110,14 +109,15 @@ class RegistrationAPIView(APIView):
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
-        userpostname = serializer.initial_data.get('username')
-        userpostemail = serializer.initial_data.get('email')
-        if review_models.User.objects.filter(email=userpostemail).exists():
-            message = ('Эта почта уже зарегистрирована')
-            return Response(message, status=status.HTTP_400_BAD_REQUEST)
-        if review_models.User.objects.filter(username=userpostname).exists():
-            message = ('Этот никнейм уже занят!')
-            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        userpostname = serializer.validated_data.get('username')
+        userpostemail = serializer.validated_data.get('email')
+        if (review_models.User.objects.filter(
+            username=userpostname).exists()
+            or review_models.User.objects.filter(
+                email=userpostemail).exists()):
+            return Response(
+                serializer.data, status=status.HTTP_400_BAD_REQUEST)
         if review_models.User.objects.filter(
                 username=userpostname, email=userpostemail).exists():
             user = get_object_or_404(review_models.User, username=userpostname)
@@ -131,23 +131,20 @@ class RegistrationAPIView(APIView):
             message = ('Письмо с кодом подтверждения\n'
                        'повторно направлено вам на почту!')
             return Response(message, status=status.HTTP_200_OK)
-        if serializer.is_valid():
-            user = review_models.User.objects.create_user(
-                username=userpostname,
-                email=userpostemail,
-                confirmation_code=randint(100000, 1000000))
-            user.role = request.data.get('role'),
-            user.save()
-            user = get_object_or_404(review_models.User, username=userpostname)
-            data = user.confirmation_code
-            send_mail(
-                'Регистрация нового пользователя',
-                'Это ваш token для получения JWTТокена:' f'{data}',
-                settings.RECIPIENTS_EMAIL,
-                [userpostemail],
-            )
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        user = review_models.User.objects.create_user(
+            username=userpostname,
+            email=userpostemail,
+            confirmation_code=randint(100000, 1000000))
+        user.save()
+        user = get_object_or_404(review_models.User, username=userpostname)
+        data = user.confirmation_code
+        send_mail(
+            'Регистрация нового пользователя',
+            'Это ваш token для получения JWTТокена:' f'{data}',
+            settings.RECIPIENTS_EMAIL,
+            [userpostemail],
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class JWTView(APIView):
