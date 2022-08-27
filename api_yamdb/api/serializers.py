@@ -1,6 +1,6 @@
 from reviews.validators import validate_year_title
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
+from rest_framework.validators import UniqueValidator
 
 from reviews import models as review_models
 from reviews.validators import username_validator
@@ -11,7 +11,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True,
         slug_field='username',
         default=serializers.CurrentUserDefault())
-    title = serializers.HiddenField(default=None)
+    title = serializers.HiddenField(default=review_models.Title.objects.all())
 
     class Meta:
         model = review_models.Review
@@ -23,12 +23,16 @@ class ReviewSerializer(serializers.ModelSerializer):
             'score',
             'pub_date'
         )
-        validators = [
-            UniqueTogetherValidator(
-                queryset=review_models.Review.objects.all(),
-                fields=('title', 'author',)
-            )
-        ]
+
+    def validate(self, attrs):
+        author = self.context['request'].user
+        request_method = self.context['request'].method
+        title_id = self.context['view'].kwargs.get('title_id')
+        if request_method == 'POST' and review_models.Review.objects.filter(
+                author=author,
+                title__pk=title_id).exists():
+            raise serializers.ValidationError('Можно оставить только 1 отзыв.')
+        return attrs
 
 
 class CommentSerializer(serializers.ModelSerializer):

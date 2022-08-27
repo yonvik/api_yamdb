@@ -48,13 +48,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
         title = self.get_title()
         return title.reviews.all()
 
-    def create(self, request, *args, **kwargs):
-        try:
-            return super().create(request, args, kwargs)
-        except IntegrityError:
-            return Response('Можно сотавить только 1 отзыв.',
-                            status.HTTP_400_BAD_REQUEST)
-
     def perform_create(self, serializer):
         author = self.request.user
         title = self.get_title()
