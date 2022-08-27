@@ -5,12 +5,13 @@ import re
 import sys
 from typing import List
 
-from api.exceptions.import_csv import (DataAlreadyExist, DoesNotExistFunction,
-                                       NotFoundPath, NotSetStaticfilesDir,
-                                       UnexpectedFile)
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import IntegrityError
+
+from api.exceptions.import_csv import (DataAlreadyExist, DoesNotExistFunction,
+                                       NotFoundPath, NotSetStaticfilesDir,
+                                       UnexpectedFile)
 from reviews import models
 
 

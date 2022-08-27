@@ -12,11 +12,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from . import paginators
-from . import permissions
-from . import serializers
-from .filters import TitleFilter
 from reviews import models as review_models
+
+from . import paginators, permissions, serializers
+from .filters import TitleFilter
 
 
 class CustomViewSet(mixins.ListModelMixin,
@@ -185,12 +184,16 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer_class=serializers.UserSerializer
     )
     def user_info(self, request):
-        user = get_object_or_404(review_models.User, pk=request.user.id)
-        serializer = self.get_serializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            if request.user.role == review_models.USER_ROLE:
-                serializer.save(role=review_models.USER_ROLE)
-            else:
-                serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        user = self.request.user
+        serializer = self.get_serializer(user)
+        if self.request.method == 'PATCH':
+            if not (user.is_admin or user.is_moderator) and not user.is_staff:
+                return Response(serializer.data)
+            serializer = self.get_serializer(
+                user,
+                data=request.data,
+                partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        return Response(serializer.data)
