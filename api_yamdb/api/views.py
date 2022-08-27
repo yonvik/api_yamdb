@@ -12,11 +12,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from . import paginators
-from . import permissions
-from . import serializers
-from .filters import TitleFilter
 from reviews import models as review_models
+
+from . import paginators, permissions, serializers
+from .filters import TitleFilter
 
 
 class CustomViewSet(mixins.ListModelMixin,

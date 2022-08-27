@@ -1,9 +1,8 @@
-from reviews.validators import validate_year_title
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from reviews import models as review_models
-from reviews.validators import username_validator
+from reviews.validators import username_validator, validate_year_title
 
 
 class ReviewSerializer(serializers.ModelSerializer):
