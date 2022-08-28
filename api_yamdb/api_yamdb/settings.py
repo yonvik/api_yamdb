@@ -148,4 +148,3 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-USERNAME_SPECIAL_CHARACTER = '@/./+/-/_'

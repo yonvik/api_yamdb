@@ -20,6 +20,10 @@ from . import paginators, permissions, serializers
 from .filters import TitleFilter
 
 
+def generate_confirmation_code():
+    return randint(START_RANGE_CONFIRMATION_CODE, END_RANGE_CONFIRMATION_CODE)
+
+
 class BaseGenreCategoryViewSet(mixins.ListModelMixin,
                                mixins.CreateModelMixin,
                                mixins.DestroyModelMixin,
@@ -117,8 +121,7 @@ class RegistrationAPIView(APIView):
         user = User.objects.create_user(
             username=user_post_name,
             email=user_post_email)
-        user.confirmation_code = str(randint(START_RANGE_CONFIRMATION_CODE,
-                                             END_RANGE_CONFIRMATION_CODE))
+        user.confirmation_code = str(generate_confirmation_code())
         user.save()
         send_mail(
             'Регистрация нового пользователя',
@@ -132,20 +135,17 @@ class RegistrationAPIView(APIView):
 class JWTView(APIView):
     serializer_class = serializers.LoginSerializer
 
-    def get_serializer(self):
-        return self.serializer_class(data=self.request.data)
-
     def post(self, request):
-        serializer = self.get_serializer()
+        serializer = serializers.LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         username = serializer.data.get('username')
         confirmation_code = serializer.data.get('confirmation_code')
         user = get_object_or_404(User, username=username)
         if user.confirmation_code != confirmation_code:
+            user.confirmation_code = generate_confirmation_code()
+            user.save()
             return Response(status=status.HTTP_400_BAD_REQUEST)
         token = RefreshToken.for_user(user)
-        user.confirmation_code = None
-        user.save()
         return Response({'token': str(token.access_token)},
                         status=status.HTTP_200_OK)
 

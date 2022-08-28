@@ -1,3 +1,4 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 
@@ -10,7 +11,15 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True,
         slug_field='username',
         default=serializers.CurrentUserDefault())
-    score = serializers.IntegerField()
+    score = serializers.IntegerField(validators=[
+        MaxValueValidator(
+            limit_value=review_models.MAXIMUM_SCORE,
+            message=f'Оценка не может быть больше {review_models.MAXIMUM_SCORE}'),
+        MinValueValidator(
+            limit_value=review_models.MINIMAL_SCORE,
+            message=f'Оценка не может быть меньше {review_models.MINIMAL_SCORE}'
+        )
+    ])
 
     class Meta:
         model = review_models.Review
@@ -22,23 +31,14 @@ class ReviewSerializer(serializers.ModelSerializer):
             'pub_date'
         )
 
-    def validate_score(self, value):
-        if (value < review_models.MINIMAL_SCORE
-                or value > review_models.MAXIMUM_SCORE):
-            raise serializers.ValidationError(
-                (f'Оценка не может быть больше {review_models.MAXIMUM_SCORE}'
-                 f'или меньше {review_models.MINIMAL_SCORE}.')
-            )
-        return value
-
     def validate(self, attrs):
-        author = self.context['request'].user
-        request_method = self.context['request'].method
-        title_id = self.context['view'].kwargs.get('title_id')
-        title = get_object_or_404(review_models.Title, pk=title_id)
-        if request_method == 'POST' and title.reviews.filter(
-                author=author).exists():
-            raise serializers.ValidationError('Можно оставить только 1 отзыв.')
+        if self.context['request'].method == 'POST':
+            title_id = self.context['view'].kwargs.get('title_id')
+            title = get_object_or_404(review_models.Title, pk=title_id)
+            if title.reviews.filter(
+                    author=self.context['request'].user).exists():
+                raise serializers.ValidationError(
+                    'Можно оставить только 1 отзыв.')
         return attrs
 
 

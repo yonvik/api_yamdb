@@ -1,7 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.conf import settings
 
 from . import validators
 
@@ -20,7 +19,7 @@ END_RANGE_CONFIRMATION_CODE = 1000000
 
 
 MAX_LENGTH_USERNAME = 150
-MAX_LENGTH_CONFIRMATION_CODE = len(str(END_RANGE_CONFIRMATION_CODE))
+MAX_LENGTH_CONFIRMATION_CODE = len(str(END_RANGE_CONFIRMATION_CODE)) - 1
 MAX_LENGTH_EMAIL = 254
 
 MINIMAL_SCORE = 1
@@ -31,9 +30,6 @@ class User(AbstractUser):
     username = models.CharField(
         max_length=MAX_LENGTH_USERNAME,
         unique=True,
-        help_text=(f'Required. {MAX_LENGTH_USERNAME} characters or fewer. '
-                   f'Letters, digits and {settings.USERNAME_SPECIAL_CHARACTER}'
-                   f' only.'),
         validators=[validators.username_validator],
         error_messages={
             'unique': "A user with that username already exists.",
@@ -41,12 +37,11 @@ class User(AbstractUser):
     )
     confirmation_code = models.CharField(
         max_length=MAX_LENGTH_CONFIRMATION_CODE,
-        unique=True,
         null=True
     )
     bio = models.TextField(blank=True, null=True)
     role = models.CharField(
-        max_length=max([len(choice) for choice, _ in ROLE_CHOICES]),
+        max_length=max(len(role) for role, _ in ROLE_CHOICES),
         default=USER_ROLE,
         choices=ROLE_CHOICES
     )

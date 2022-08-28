@@ -2,7 +2,6 @@ import datetime as dt
 import re
 
 from django.core.exceptions import ValidationError
-from django.conf import settings
 
 NOT_ALLOWED_USERNAMES = ['me']
 
@@ -13,10 +12,10 @@ def username_validator(value: str):
             'Поле username не может содержать значение: ', value
         )
     if re.search(r'^[\w.@+-]+\Z', value) is None:
+        not_allowed_characters = ','.join(re.findall(r'[^\w.@+-]+', value))
         raise ValidationError(
-            'username может состоять только из букв, '
-            f'цифр и спецсимволов: {settings.USERNAME_SPECIAL_CHARACTER}'
-            'недопустимые значения: ()*&^%$#!=~`?')
+            'username может состоять только из букв, недопустимые '
+            f'значения: {not_allowed_characters}')
     return value
 
 
