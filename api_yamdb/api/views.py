@@ -22,7 +22,7 @@ from . import paginators, permissions, serializers
 from .filters import TitleFilter
 
 
-def generate_confirmation_code(user):
+def set_confirmation_code(user):
     user.confirmation_code = str(randint(START_RANGE_CONFIRMATION_CODE,
                                          END_RANGE_CONFIRMATION_CODE))
     user.save()
@@ -120,9 +120,9 @@ class RegistrationAPIView(APIView):
                 email=email
             )
         except IntegrityError:
-            return Response(serializer.data,
+            return Response('username or email already exists.',
                             status=status.HTTP_400_BAD_REQUEST)
-        generate_confirmation_code(user)
+        set_confirmation_code(user)
         send_mail(
             'Регистрация пользователя',
             f'Это ваш confirmation_code: {user.confirmation_code}',
