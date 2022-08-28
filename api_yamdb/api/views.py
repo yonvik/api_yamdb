@@ -88,14 +88,12 @@ class GenreViewSet(BaseGenreCategoryViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Endpoint модели Title."""
-    queryset = Title.objects.prefetch_related(
-        'category', 'genre'
-    ).annotate(rating=Avg('reviews__score'))
+    queryset = Title.objects.annotate(rating=Avg('reviews__score'))
     permission_classes = (permissions.OnlyAdminOrRead,)
     pagination_class = paginators.StandardResultsSetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
-    ordering_fields = ('-rating',)
+    ordering_fields = ('-rating', 'category', 'name', 'year')
 
     def get_serializer_class(self):
         if self.action in ('retrieve', 'list'):
