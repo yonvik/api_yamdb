@@ -14,10 +14,12 @@ class ReviewSerializer(serializers.ModelSerializer):
     score = serializers.IntegerField(validators=[
         MaxValueValidator(
             limit_value=review_models.MAXIMUM_SCORE,
-            message=f'Оценка не может быть больше {review_models.MAXIMUM_SCORE}'),
+            message=(
+                f'Оценка не может быть больше {review_models.MAXIMUM_SCORE}')),
         MinValueValidator(
             limit_value=review_models.MINIMAL_SCORE,
-            message=f'Оценка не может быть меньше {review_models.MINIMAL_SCORE}'
+            message=(
+                f'Оценка не может быть меньше {review_models.MINIMAL_SCORE}')
         )
     ])
 
