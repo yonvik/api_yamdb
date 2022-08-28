@@ -2,7 +2,7 @@ from random import randint
 
 from django.conf import settings
 from django.core.mail import send_mail
-from django.db.models import Avg
+from django.db.models import Avg, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
@@ -110,24 +110,23 @@ class RegistrationAPIView(APIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user_post_name = serializer.validated_data.get('username')
-        user_post_email = serializer.validated_data.get('email')
-        if (User.objects.filter(
-                username=user_post_name).exists()
-                or User.objects.filter(
-                    email=user_post_email).exists()):
-            return Response(
-                serializer.data, status=status.HTTP_400_BAD_REQUEST)
-        user = User.objects.create_user(
-            username=user_post_name,
-            email=user_post_email)
+        username = serializer.validated_data.get('username')
+        email = serializer.validated_data.get('email')
+        if User.objects.filter(Q(username=username) | Q(email=email)).exists():
+            try:
+                user = User.objects.get(username=username, email=email)
+            except User.DoesNotExist:
+                return Response(
+                    serializer.data, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            user = User.objects.create_user(username=username, email=email)
         user.confirmation_code = str(generate_confirmation_code())
         user.save()
         send_mail(
             'Регистрация нового пользователя',
-            'Это ваш token' f'{user.confirmation_code}',
+            f'Это ваш confirmation_code: {user.confirmation_code}',
             settings.RECIPIENTS_EMAIL,
-            [user_post_email],
+            [email],
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
