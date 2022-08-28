@@ -2,6 +2,7 @@ from random import randint
 
 from django.conf import settings
 from django.core.mail import send_mail
+from django.db import IntegrityError
 from django.db.models import Avg, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
@@ -14,14 +15,17 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import (Review, Title, Genre, Category, User,
                             START_RANGE_CONFIRMATION_CODE,
-                            END_RANGE_CONFIRMATION_CODE)
+                            END_RANGE_CONFIRMATION_CODE,
+                            NOT_PIN_CONFIRMATION_CODE)
 
 from . import paginators, permissions, serializers
 from .filters import TitleFilter
 
 
-def generate_confirmation_code():
-    return randint(START_RANGE_CONFIRMATION_CODE, END_RANGE_CONFIRMATION_CODE)
+def generate_confirmation_code(user):
+    user.confirmation_code = str(randint(START_RANGE_CONFIRMATION_CODE,
+                                         END_RANGE_CONFIRMATION_CODE))
+    user.save()
 
 
 class BaseGenreCategoryViewSet(mixins.ListModelMixin,
@@ -110,18 +114,17 @@ class RegistrationAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         username = serializer.validated_data.get('username')
         email = serializer.validated_data.get('email')
-        if User.objects.filter(Q(username=username) | Q(email=email)).exists():
-            try:
-                user = User.objects.get(username=username, email=email)
-            except User.DoesNotExist:
-                return Response(
-                    serializer.data, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            user = User.objects.create_user(username=username, email=email)
-        user.confirmation_code = str(generate_confirmation_code())
-        user.save()
+        try:
+            user, _ = User.objects.get_or_create(
+                username=username,
+                email=email
+            )
+        except IntegrityError:
+            return Response(serializer.data,
+                            status=status.HTTP_400_BAD_REQUEST)
+        generate_confirmation_code(user)
         send_mail(
-            'Регистрация нового пользователя',
+            'Регистрация пользователя',
             f'Это ваш confirmation_code: {user.confirmation_code}',
             settings.RECIPIENTS_EMAIL,
             [email],
@@ -130,7 +133,6 @@ class RegistrationAPIView(APIView):
 
 
 class JWTView(APIView):
-    serializer_class = serializers.LoginSerializer
 
     def post(self, request):
         serializer = serializers.LoginSerializer(data=request.data)
@@ -138,8 +140,9 @@ class JWTView(APIView):
         username = serializer.data.get('username')
         confirmation_code = serializer.data.get('confirmation_code')
         user = get_object_or_404(User, username=username)
-        if user.confirmation_code != confirmation_code:
-            user.confirmation_code = generate_confirmation_code()
+        if (user.confirmation_code != confirmation_code
+                or user.confirmation_code == NOT_PIN_CONFIRMATION_CODE):
+            user.confirmation_code = NOT_PIN_CONFIRMATION_CODE
             user.save()
             return Response(status=status.HTTP_400_BAD_REQUEST)
         token = RefreshToken.for_user(user)
