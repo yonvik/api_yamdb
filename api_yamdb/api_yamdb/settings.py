@@ -111,7 +111,6 @@ REST_FRAMEWORK = {
     ],
 }
 
-
 AUTH_USER_MODEL = "reviews.User"
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -148,3 +147,5 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
+
+USERNAME_SPECIAL_CHARACTER = '@/./+/-/_'

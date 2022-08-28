@@ -2,9 +2,8 @@ import datetime as dt
 import re
 
 from django.core.exceptions import ValidationError
+from django.conf import settings
 
-MINIMAL_SCORE = 1
-MAXIMUM_SCORE = 10
 NOT_ALLOWED_USERNAMES = ['me']
 
 
@@ -16,7 +15,9 @@ def username_validator(value: str):
     if re.search(r'^[\w.@+-]+\Z', value) is None:
         raise ValidationError(
             'username может состоять только из букв, '
-            'цифр и спецсимволов: @.+-_')
+            f'цифр и спецсимволов: {settings.USERNAME_SPECIAL_CHARACTER}'
+            'недопустимые значения: ()*&^%$#!=~`?')
+    return value
 
 
 def validate_year_title(value):

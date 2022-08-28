@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
+from rest_framework.generics import get_object_or_404
 
 from reviews import models as review_models
 from reviews.validators import username_validator, validate_year_title
@@ -10,7 +10,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True,
         slug_field='username',
         default=serializers.CurrentUserDefault())
-    title = serializers.HiddenField(default=review_models.Title.objects.all())
+    score = serializers.IntegerField()
 
     class Meta:
         model = review_models.Review
@@ -18,18 +18,26 @@ class ReviewSerializer(serializers.ModelSerializer):
             'id',
             'text',
             'author',
-            'title',
             'score',
             'pub_date'
         )
+
+    def validate_score(self, value):
+        if (value < review_models.MINIMAL_SCORE
+                or value > review_models.MAXIMUM_SCORE):
+            raise serializers.ValidationError(
+                (f'Оценка не может быть больше {review_models.MAXIMUM_SCORE}'
+                 f'или меньше {review_models.MINIMAL_SCORE}.')
+            )
+        return value
 
     def validate(self, attrs):
         author = self.context['request'].user
         request_method = self.context['request'].method
         title_id = self.context['view'].kwargs.get('title_id')
-        if request_method == 'POST' and review_models.Review.objects.filter(
-                author=author,
-                title__pk=title_id).exists():
+        title = get_object_or_404(review_models.Title, pk=title_id)
+        if request_method == 'POST' and title.reviews.filter(
+                author=author).exists():
             raise serializers.ValidationError('Можно оставить только 1 отзыв.')
         return attrs
 
@@ -108,20 +116,19 @@ class LoginSerializer(serializers.Serializer):
         max_length=review_models.MAX_LENGTH_USERNAME,
         validators=[username_validator]
     )
+    confirmation_code = serializers.CharField(
+        max_length=review_models.MAX_LENGTH_CONFIRMATION_CODE
+    )
 
 
 class UserSerializer(serializers.ModelSerializer):
     """User serializer"""
-    username = serializers.CharField(
-        max_length=review_models.MAX_LENGTH_USERNAME,
-        validators=[
-            UniqueValidator(queryset=review_models.User.objects.all()),
-            username_validator
-        ]
-    )
 
     class Meta:
         model = review_models.User
         fields = (
             'username', 'first_name', 'last_name', 'email', 'bio', 'role'
         )
+
+    def validate_username(self, value):
+        return username_validator(value)
