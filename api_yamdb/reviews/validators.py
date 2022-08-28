@@ -9,12 +9,14 @@ NOT_ALLOWED_USERNAMES = ['me']
 def username_validator(value: str):
     if value in NOT_ALLOWED_USERNAMES:
         raise ValidationError(
-            'Поле username не может содержать значение: ', value
+            f'Использовать имя {value} недопустимо для username.'
         )
     if re.search(r'^[\w.@+-]+\Z', value) is None:
-        not_allowed_characters = ' '.join(re.findall(r'[^\w.@+-]+', value))
+        not_allowed_characters = ''.join(
+            set(re.findall(r'[^\w.@+-]', value))
+        )
         raise ValidationError(
-            f'username недопустимое значение: {not_allowed_characters}')
+            f'username содержит недопустимые символы:{not_allowed_characters}')
     return value
 
 
