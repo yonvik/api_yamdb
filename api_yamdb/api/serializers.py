@@ -13,13 +13,9 @@ class ReviewSerializer(serializers.ModelSerializer):
         default=serializers.CurrentUserDefault())
     score = serializers.IntegerField(validators=[
         MaxValueValidator(
-            limit_value=review_models.MAXIMUM_SCORE,
-            message=(
-                f'Оценка не может быть больше {review_models.MAXIMUM_SCORE}')),
+            limit_value=review_models.MAXIMUM_SCORE),
         MinValueValidator(
-            limit_value=review_models.MINIMAL_SCORE,
-            message=(
-                f'Оценка не может быть меньше {review_models.MINIMAL_SCORE}')
+            limit_value=review_models.MINIMAL_SCORE
         )
     ])
 
@@ -34,13 +30,14 @@ class ReviewSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, attrs):
-        if self.context['request'].method == 'POST':
-            title_id = self.context['view'].kwargs.get('title_id')
-            title = get_object_or_404(review_models.Title, pk=title_id)
-            if title.reviews.filter(
-                    author=self.context['request'].user).exists():
-                raise serializers.ValidationError(
-                    'Можно оставить только 1 отзыв.')
+        if self.context['request'].method != 'POST':
+            return attrs
+        title_id = self.context['view'].kwargs.get('title_id')
+        title = get_object_or_404(review_models.Title, pk=title_id)
+        if title.reviews.filter(
+                author=self.context['request'].user).exists():
+            raise serializers.ValidationError(
+                'Можно оставить только 1 отзыв.')
         return attrs
 
 
