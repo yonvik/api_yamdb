@@ -106,40 +106,25 @@ class RegistrationAPIView(APIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        userpostname = serializer.validated_data.get('username')
-        userpostemail = serializer.validated_data.get('email')
+        user_post_name = serializer.validated_data.get('username')
+        user_post_email = serializer.validated_data.get('email')
         if (User.objects.filter(
-                username=userpostname).exists()
+                username=user_post_name).exists()
                 or User.objects.filter(
-                    email=userpostemail).exists()):
+                    email=user_post_email).exists()):
             return Response(
                 serializer.data, status=status.HTTP_400_BAD_REQUEST)
-        if User.objects.filter(
-                username=userpostname, email=userpostemail).exists():
-            user = get_object_or_404(User, username=userpostname)
-            data = user.confirmation_code
-            send_mail(
-                'Регистрация нового пользователя',
-                'Это ваш token для получения JWTТокена:' f'{data}',
-                settings.RECIPIENTS_EMAIL,
-                [user.email],
-            )
-            message = ('Письмо с кодом подтверждения\n'
-                       'повторно направлено вам на почту!')
-            return Response(message, status=status.HTTP_200_OK)
         user = User.objects.create_user(
-            username=userpostname,
-            email=userpostemail,
-            confirmation_code=randint(START_RANGE_CONFIRMATION_CODE,
-                                      END_RANGE_CONFIRMATION_CODE))
+            username=user_post_name,
+            email=user_post_email)
+        user.confirmation_code = str(randint(START_RANGE_CONFIRMATION_CODE,
+                                             END_RANGE_CONFIRMATION_CODE))
         user.save()
-        user = get_object_or_404(User, username=userpostname)
-        data = user.confirmation_code
         send_mail(
             'Регистрация нового пользователя',
-            'Это ваш token для получения JWTТокена:' f'{data}',
+            'Это ваш token' f'{user.confirmation_code}',
             settings.RECIPIENTS_EMAIL,
-            [userpostemail],
+            [user_post_email],
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
